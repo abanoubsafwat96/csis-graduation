@@ -127,10 +127,15 @@ public class ChatActivity extends AppCompatActivity {
     //image picked will be samed in this uri
     Uri image_rui = null;
 
+    private String userType;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+
+        SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(ChatActivity.this);
+        userType = mPrefs.getString("userType", "");
 
         //init views
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -326,7 +331,12 @@ public class ChatActivity extends AppCompatActivity {
         HashMap<String, String> hashMap = new HashMap<>();
         hashMap.put("uid", hisUid);
 
-        DatabaseReference ref= FirebaseDatabase.getInstance().getReference("Users");
+        DatabaseReference ref= null;
+        if (userType.equals("Student"))
+            ref=FirebaseDatabase.getInstance().getReference("Users");
+        else if (userType.equals("Admin"))
+            ref=FirebaseDatabase.getInstance().getReference("Admins");
+
         ref.child(myUid).child("BlockedUsers").child(hisUid).setValue(hashMap)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -540,6 +550,12 @@ public class ChatActivity extends AppCompatActivity {
 
         HashMap<String, Object> hashMap = new HashMap<>();
         hashMap.put("sender", myUid);
+
+        if (userType.equals("Student"))
+            hashMap.put("senderNode", "Users");
+        else if (userType.equals("Admin"))
+        hashMap.put("senderNode", "Admins");
+
         hashMap.put("receiver", hisUid);
         hashMap.put("message", message);
         hashMap.put("timestamp", timestamp);
@@ -573,7 +589,8 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (!dataSnapshot.exists()){
-                    chatRef1.child("id").setValue(hisUid);
+                    if (userType.equals("S"))
+                    chatRef1.child("node").setValue(hisUid);
                 }
             }
 

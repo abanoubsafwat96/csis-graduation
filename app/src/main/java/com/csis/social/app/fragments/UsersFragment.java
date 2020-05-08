@@ -4,14 +4,6 @@ package com.csis.social.app.fragments;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.core.view.MenuItemCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.appcompat.widget.SearchView;
-
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -38,6 +30,14 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SearchView;
+import androidx.core.view.MenuItemCompat;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -51,16 +51,22 @@ public class UsersFragment extends Fragment {
     //firebase auth
     FirebaseAuth firebaseAuth;
 
+    private String userType;
+    private ValueEventListener valueEventListener;
+    private boolean listening;
+
     public UsersFragment() {
         // Required empty public constructor
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_users, container, false);
+
+        SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        userType = mPrefs.getString("userType", "");
 
         //init
         firebaseAuth = FirebaseAuth.getInstance();
@@ -84,25 +90,31 @@ public class UsersFragment extends Fragment {
         //get current user
         final FirebaseUser fUser = FirebaseAuth.getInstance().getCurrentUser();
         //get path of database named "Users" containing users info
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
         //get all data from path
-        ref.addValueEventListener(new ValueEventListener() {
+        valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                userList.clear();
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    ModelUser modelUser = ds.getValue(ModelUser.class);
+                if (listening) {
+                    userList.clear();
 
-                    //get all users except currently signed in user
-                    if (!modelUser.getUid().equals(fUser.getUid())) {
-                        userList.add(modelUser);
+                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                        ModelUser modelUser = ds.getValue(ModelUser.class);
+
+                        //get all users except currently signed in user
+                        if (modelUser != null && modelUser.getUid() != null && !modelUser.getUid().equals(fUser.getUid())) {
+                            modelUser.setNode("Users");
+                            userList.add(modelUser);
+                        }
+
+                        //adapter
+                        adapterUsers = new AdapterUsers(getActivity(), userList, userType);
+                        //set adapter to recycler view
+                        recyclerView.setAdapter(adapterUsers);
+
+                        listening=false;
+                        ref.removeEventListener(valueEventListener);
                     }
-
-                    //adapter
-                    adapterUsers = new AdapterUsers(getActivity(), userList);
-                    //set adapter to recycler view
-                    recyclerView.setAdapter(adapterUsers);
-
                 }
             }
 
@@ -110,7 +122,9 @@ public class UsersFragment extends Fragment {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+        };
+        listening=true;
+        ref.addValueEventListener(valueEventListener);
     }
 
     private void searchUsers(final String query) {
@@ -136,13 +150,14 @@ public class UsersFragment extends Fragment {
 
                         if (modelUser.getName().toLowerCase().contains(query.toLowerCase()) ||
                                 modelUser.getEmail().toLowerCase().contains(query.toLowerCase())) {
+                            modelUser.setNode("Users");
                             userList.add(modelUser);
                         }
 
                     }
 
                     //adapter
-                    adapterUsers = new AdapterUsers(getActivity(), userList);
+                    adapterUsers = new AdapterUsers(getActivity(), userList, userType);
                     //refresh adapter
                     adapterUsers.notifyDataSetChanged();
                     //set adapter to recycler view
@@ -237,12 +252,10 @@ public class UsersFragment extends Fragment {
             firebaseAuth.signOut();
             clearSharedPreference();
             checkUserStatus();
-        }
-        else if (id==R.id.action_settings){
+        } else if (id == R.id.action_settings) {
             //go to settings activity
             startActivity(new Intent(getActivity(), SettingsActivity.class));
-        }
-        else if (id==R.id.action_create_group){
+        } else if (id == R.id.action_create_group) {
             //go to GroupCreateActivity activity
             startActivity(new Intent(getActivity(), GroupCreateActivity.class));
         }
@@ -251,7 +264,7 @@ public class UsersFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    public void clearSharedPreference(){
+    public void clearSharedPreference() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         //editing into shared preference
         SharedPreferences.Editor editor = sharedPreferences.edit();

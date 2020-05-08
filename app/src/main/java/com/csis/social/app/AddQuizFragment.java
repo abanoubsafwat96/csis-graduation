@@ -37,7 +37,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 
-public class AddQuizFragment extends Fragment implements Communicator {
+public class AddQuizFragment extends Fragment implements Communicator.AddQuizFragment {
 
     TextView deadline, noQuestions, noBonusQuestions;
     EditText title, description, timerMinutes, timerSeconds, questionED, choice1, choice2, choice3, choice4, bonusQuestionED, bonusChoice1, bonusChoice2, bonusChoice3, bonusChoice4;

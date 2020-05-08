@@ -3,7 +3,7 @@ package com.csis.social.app.models;
 public class ModelUser {
 
     //use same name as in firebase database
-    String name, email, search, phone, image, cover, uid, onlineStatus, typingTo;
+    String name, email, search, phone, image, cover, uid, onlineStatus, typingTo,node;
     boolean isBlocked = false;
 
     public ModelUser() {
@@ -101,5 +101,13 @@ public class ModelUser {
 
     public void setBlocked(boolean blocked) {
         isBlocked = blocked;
+    }
+
+    public String getNode() {
+        return node;
+    }
+
+    public void setNode(String node) {
+        this.node = node;
     }
 }

@@ -49,6 +49,8 @@ public class ThereProfileActivity extends AppCompatActivity {
     AdapterPosts adapterPosts;
     String uid;
 
+    private String userType;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +62,9 @@ public class ThereProfileActivity extends AppCompatActivity {
 
         actionBar.setDisplayShowHomeEnabled(true);
         actionBar.setDisplayHomeAsUpEnabled(true);
+
+        SharedPreferences  mPrefs = PreferenceManager.getDefaultSharedPreferences(ThereProfileActivity.this);
+        userType=mPrefs.getString("userType","");
 
         //init views
         avatarIv = findViewById(R.id.avatarIv);
@@ -153,7 +158,7 @@ public class ThereProfileActivity extends AppCompatActivity {
                     postList.add(myPosts);
 
                     //adapter
-                    adapterPosts = new AdapterPosts(ThereProfileActivity.this, postList);
+                    adapterPosts = new AdapterPosts(ThereProfileActivity.this, postList,userType);
                     //set this adapter to recyclerview
                     postsRecyclerView.setAdapter(adapterPosts);
                 }
@@ -197,7 +202,7 @@ public class ThereProfileActivity extends AppCompatActivity {
                     }
 
                     //adapter
-                    adapterPosts = new AdapterPosts(ThereProfileActivity.this, postList);
+                    adapterPosts = new AdapterPosts(ThereProfileActivity.this, postList,userType);
                     //set this adapter to recyclerview
                     postsRecyclerView.setAdapter(adapterPosts);
                 }

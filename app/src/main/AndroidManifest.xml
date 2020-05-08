@@ -14,9 +14,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".display">
-
-        </activity>
+        <activity android:name=".SubjectsFollowActivity"
+            android:label="Follow/UnFollow Subjects"></activity>
+        <activity android:name=".display"></activity>
         <activity android:name=".GroupCreateActivity" />
         <activity android:name=".PostLikedByActivity" />
         <activity android:name=".SettingsActivity" />
@@ -46,21 +46,22 @@ Intent filters inform the system what intents an application component is willin
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".TeacherQuizActivity"
-            android:label="Quizzes"/>
-        <activity android:name=".GradesGraphActivity"
-            android:label="Grades Graph"/>
-        <activity android:name=".OldQuizzes2Activity"
-            android:label="Quiz Details"/>
-        <activity android:name=".StudentQuizActivity"
-            android:label="Quiz"/>
-
-
+        <activity
+            android:name=".TeacherQuizActivity"
+            android:label="Quizzes" />
+        <activity
+            android:name=".GradesGraphActivity"
+            android:label="Grades Graph" />
+        <activity
+            android:name=".OldQuizzes2Activity"
+            android:label="Quiz Details" />
+        <activity
+            android:name=".StudentQuizActivity"
+            android:label="Quiz" />
         <activity
             android:name=".ChatActivity"
             android:theme="@style/AppThemeNo" />
-        <activity android:name=".DashboardActivity"></activity>
+        <activity android:name=".DashboardActivity" />
         <activity android:name=".LoginActivity" />
         <activity
             android:name=".SplashActivity"
@@ -70,7 +71,6 @@ Intent filters inform the system what intents an application component is willin
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
         <activity android:name=".RegisterActivity" />
         <activity

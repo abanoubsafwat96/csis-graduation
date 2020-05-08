@@ -17,7 +17,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-class Utilities {
+public class Utilities {
 
     public static FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     public static FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
@@ -86,7 +86,7 @@ class Utilities {
         return null;
     }
 
-    public static ArrayList<String> getAllSubjects(DataSnapshot dataSnapshot) {
+    public static ArrayList<String> getAllSubjectsFromSemester(DataSnapshot dataSnapshot) {
         ArrayList<String> list = new ArrayList<>();
 
         if (dataSnapshot.getValue() != null) {
@@ -109,6 +109,43 @@ class Utilities {
             Object subject6 = dataSnapshot.child("subject6").getValue();
             if (subject6 != null)
                 list.add(subject6.toString());
+        }
+        return list;
+    }
+
+    public static ArrayList<String> getAllSubjectsAllLevelsAndSemesters(DataSnapshot dataSnapshot) {
+        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> allLevels=getAllLevels();
+        ArrayList<String> allSemesters=getAllSemesters();
+
+        if (dataSnapshot.getValue() != null) {
+
+            for (int i=0;i<allLevels.size();i++){
+                String level=allLevels.get(i);
+
+                for (int j=0;j<allSemesters.size();j++){
+                    String semester=allSemesters.get(j);
+
+                    Object subject1 = dataSnapshot.child(level).child(semester).child("subject1").getValue();
+                    if (subject1 != null)
+                        list.add(subject1.toString());
+                    Object subject2 = dataSnapshot.child(level).child(semester).child("subject2").getValue();
+                    if (subject2 != null)
+                        list.add(subject2.toString());
+                    Object subject3 = dataSnapshot.child(level).child(semester).child("subject3").getValue();
+                    if (subject3 != null)
+                        list.add(subject3.toString());
+                    Object subject4 = dataSnapshot.child(level).child(semester).child("subject4").getValue();
+                    if (subject4 != null)
+                        list.add(subject4.toString());
+                    Object subject5 = dataSnapshot.child(level).child(semester).child("subject5").getValue();
+                    if (subject5 != null)
+                        list.add(subject5.toString());
+                    Object subject6 = dataSnapshot.child(level).child(semester).child("subject6").getValue();
+                    if (subject6 != null)
+                        list.add(subject6.toString());
+                }
+            }
         }
         return list;
     }

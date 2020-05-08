@@ -23,7 +23,6 @@
 
     <style name="DialogTheme" parent="Theme.AppCompat.Dialog">
         <item name="android:windowNoTitle">true</item>
-
     </style>
 
 </resources>

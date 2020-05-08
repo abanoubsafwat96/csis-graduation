@@ -4,14 +4,6 @@ package com.csis.social.app.fragments;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.core.view.MenuItemCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.appcompat.widget.SearchView;
-
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -26,7 +18,7 @@ import com.csis.social.app.AddPostActivity;
 import com.csis.social.app.MainActivity;
 import com.csis.social.app.R;
 import com.csis.social.app.SettingsActivity;
-import com.csis.social.app.ThereProfileActivity;
+import com.csis.social.app.Utilities;
 import com.csis.social.app.adapters.AdapterPosts;
 import com.csis.social.app.models.ModelPost;
 import com.google.firebase.auth.FirebaseAuth;
@@ -40,6 +32,14 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SearchView;
+import androidx.core.view.MenuItemCompat;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -48,10 +48,14 @@ public class HomeFragment extends Fragment {
 
     //firebase auth
     FirebaseAuth firebaseAuth;
+    FirebaseDatabase firebaseDatabase;
 
     RecyclerView recyclerView;
     List<ModelPost> postList;
     AdapterPosts adapterPosts;
+
+    String userType;
+    private DatabaseReference subjectsReference;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -62,10 +66,14 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view =  inflater.inflate(R.layout.fragment_home, container, false);
+        View view = inflater.inflate(R.layout.fragment_home, container, false);
+
+        SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        userType = mPrefs.getString("userType", "");
 
         //init
         firebaseAuth = FirebaseAuth.getInstance();
+        firebaseDatabase = FirebaseDatabase.getInstance();
 
         //recycler view and its properties
         recyclerView = view.findViewById(R.id.postsRecyclerview);
@@ -85,89 +93,133 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadPosts() {
-        //path of all posts
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Posts");
-        //get all data from this ref
-        ref.addValueEventListener(new ValueEventListener() {
+        String current_student_uid = Utilities.getCurrentUID();
+        if (userType.equals("Student"))
+            subjectsReference = firebaseDatabase.getReference().child("Users").child(current_student_uid).child("follow");
+        else if (userType.equals("Admin"))
+            subjectsReference = firebaseDatabase.getReference().child("Admins").child(current_student_uid).child("follow");
+
+        subjectsReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                postList.clear();
-                for (DataSnapshot ds: dataSnapshot.getChildren()){
-                    ModelPost modelPost = ds.getValue(ModelPost.class);
 
-                    postList.add(modelPost);
+                final ArrayList<String> subjects_list = Utilities.getFollowedSubjects(dataSnapshot);
 
-                    //adapter
-                    adapterPosts = new AdapterPosts(getActivity(), postList);
-                    //set adapter to recyclerview
-                    recyclerView.setAdapter(adapterPosts);
-                }
-            }
+                //path of all posts
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Posts");
+                //get all data from this ref
+                ref.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        postList.clear();
+                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                            ModelPost modelPost = ds.getValue(ModelPost.class);
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                //in case of error
-                Toast.makeText(getActivity(), ""+databaseError.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void searchPosts(final String searchQuery){
-
-        //path of all posts
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Posts");
-        //get all data from this ref
-        ref.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                postList.clear();
-                for (DataSnapshot ds: dataSnapshot.getChildren()){
-                    ModelPost modelPost = ds.getValue(ModelPost.class);
-
-
-                    if (modelPost.getpTitle().toLowerCase().contains(searchQuery.toLowerCase()) ||
-                            modelPost.getpDescr().toLowerCase().contains(searchQuery.toLowerCase())){
-                        postList.add(modelPost);
+                            for (int i = 0; i < subjects_list.size(); i++) {
+                                if (modelPost != null && modelPost.getSubject() != null && modelPost.getSubject().equals(subjects_list.get(i))) {
+                                    postList.add(modelPost);
+                                    break;
+                                }
+                            }
+                            //adapter
+                            adapterPosts = new AdapterPosts(getActivity(), postList,userType);
+                            //set adapter to recyclerview
+                            recyclerView.setAdapter(adapterPosts);
+                        }
                     }
 
-                    //adapter
-                    adapterPosts = new AdapterPosts(getActivity(), postList);
-                    //set adapter to recyclerview
-                    recyclerView.setAdapter(adapterPosts);
-                }
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        //in case of error
+                        Toast.makeText(getActivity(), "" + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                //in case of error
-                Toast.makeText(getActivity(), ""+databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+
             }
         });
-
-
     }
 
+    private void searchPosts(final String searchQuery) {
 
-            private void checkUserStatus(){
-                //get current user
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null){
-                    //user is signed in stay here
-                    //set email of logged in user
-                    //mProfileTv.setText(user.getEmail());
-                }
-                else {
-                    //user not signed in, go to main acitivity
-                    startActivity(new Intent(getActivity(), MainActivity.class));
-                    getActivity().finish();
-                }
+        String current_student_uid = Utilities.getCurrentUID();
+        if (userType.equals("Student"))
+            subjectsReference = firebaseDatabase.getReference().child("Users").child(current_student_uid).child("follow");
+        else if (userType.equals("Admin"))
+            subjectsReference = firebaseDatabase.getReference().child("Admins").child(current_student_uid).child("follow");
+
+        subjectsReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                final ArrayList<String> subjects_list = Utilities.getFollowedSubjects(dataSnapshot);
+
+                //path of all posts
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Posts");
+                //get all data from this ref
+                ref.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        postList.clear();
+                        for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                            ModelPost modelPost = ds.getValue(ModelPost.class);
+
+                            if (modelPost.getpTitle().toLowerCase().contains(searchQuery.toLowerCase()) ||
+                                    modelPost.getpDescr().toLowerCase().contains(searchQuery.toLowerCase())) {
+                                for (int i = 0; i < subjects_list.size(); i++) {
+                                    if (modelPost != null && modelPost.getSubject() != null && modelPost.getSubject().equals(subjects_list.get(i))) {
+                                        postList.add(modelPost);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            //adapter
+                            adapterPosts = new AdapterPosts(getActivity(), postList,userType);
+                            //set adapter to recyclerview
+                            recyclerView.setAdapter(adapterPosts);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        //in case of error
+                        Toast.makeText(getActivity(), "" + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
             }
 
             @Override
-            public void onCreate(@Nullable Bundle savedInstanceState) {
-                setHasOptionsMenu(true);//to show menu option in fragment
-                super.onCreate(savedInstanceState);
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
+        });
+    }
+
+
+    private void checkUserStatus() {
+        //get current user
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            //user is signed in stay here
+            //set email of logged in user
+            //mProfileTv.setText(user.getEmail());
+        } else {
+            //user not signed in, go to main acitivity
+            startActivity(new Intent(getActivity(), MainActivity.class));
+            getActivity().finish();
+        }
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        setHasOptionsMenu(true);//to show menu option in fragment
+        super.onCreate(savedInstanceState);
+    }
 
     /*inflate options menu*/
     @Override
@@ -180,17 +232,16 @@ public class HomeFragment extends Fragment {
 
         //searchview to search posts by post title/description
         MenuItem item = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView)MenuItemCompat.getActionView(item);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(item);
 
         //search listener
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String s) {
                 //called when user press search button
-                if (!TextUtils.isEmpty(s)){
+                if (!TextUtils.isEmpty(s)) {
                     searchPosts(s);
-                }
-                else {
+                } else {
                     loadPosts();
                 }
                 return false;
@@ -199,10 +250,9 @@ public class HomeFragment extends Fragment {
             @Override
             public boolean onQueryTextChange(String s) {
                 //called as and when user press any letter
-                if (!TextUtils.isEmpty(s)){
+                if (!TextUtils.isEmpty(s)) {
                     searchPosts(s);
-                }
-                else {
+                } else {
                     loadPosts();
                 }
                 return false;
@@ -217,15 +267,13 @@ public class HomeFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         //get item id
         int id = item.getItemId();
-        if (id == R.id.action_logout){
+        if (id == R.id.action_logout) {
             firebaseAuth.signOut();
             clearSharedPreference();
             checkUserStatus();
-        }
-        else if (id == R.id.action_add_post){
+        } else if (id == R.id.action_add_post) {
             startActivity(new Intent(getActivity(), AddPostActivity.class));
-        }
-        else if (id==R.id.action_settings){
+        } else if (id == R.id.action_settings) {
             //go to settings activity
             startActivity(new Intent(getActivity(), SettingsActivity.class));
         }
@@ -233,7 +281,7 @@ public class HomeFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    public void clearSharedPreference(){
+    public void clearSharedPreference() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         //editing into shared preference
         SharedPreferences.Editor editor = sharedPreferences.edit();

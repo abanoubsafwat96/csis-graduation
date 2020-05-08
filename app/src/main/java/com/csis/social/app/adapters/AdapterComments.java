@@ -3,8 +3,6 @@ package com.csis.social.app.adapters;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.csis.social.app.R;
 import com.csis.social.app.models.ModelComment;
 import com.google.firebase.database.DataSnapshot;
@@ -24,6 +23,9 @@ import com.squareup.picasso.Picasso;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class AdapterComments extends RecyclerView.Adapter<AdapterComments.MyHolder> {
 

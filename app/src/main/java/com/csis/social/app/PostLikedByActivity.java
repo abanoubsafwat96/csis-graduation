@@ -6,7 +6,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 
 import com.csis.social.app.R;
 import com.csis.social.app.adapters.AdapterUsers;
@@ -32,10 +34,15 @@ public class PostLikedByActivity extends AppCompatActivity {
 
     private FirebaseAuth firebaseAuth;
 
+    private String userType;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post_liked_by);
+
+        SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(PostLikedByActivity.this);
+        userType = mPrefs.getString("userType", "");
 
         //actionbar
         ActionBar actionBar = getSupportActionBar();
@@ -64,9 +71,10 @@ public class PostLikedByActivity extends AppCompatActivity {
                 userList.clear();
                 for (DataSnapshot ds: dataSnapshot.getChildren()){
                     String hisUid = ""+ ds.getRef().getKey();
+                    String hisNode = ""+ ds.getValue().toString();
 
                     //get user info from each id
-                    getUsers(hisUid);
+                    getUsers(hisUid,hisNode);
                 }
             }
 
@@ -77,20 +85,21 @@ public class PostLikedByActivity extends AppCompatActivity {
         });
     }
 
-    private void getUsers(String hisUid) {
+    private void getUsers(String hisUid, final String hisNode) {
         // get information of each user using uid
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference(hisNode);
         ref.orderByChild("uid").equalTo(hisUid)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         for(DataSnapshot ds: dataSnapshot.getChildren()){
                             ModelUser modelUser = ds.getValue(ModelUser.class);
+                            modelUser.setNode(hisNode);
                             userList.add(modelUser);
                         }
 
                         //setup adapter
-                        adapterUsers = new AdapterUsers(PostLikedByActivity.this, userList);
+                        adapterUsers = new AdapterUsers(PostLikedByActivity.this, userList,userType);
                         //set adapter to recyclerview
                         recyclerView.setAdapter(adapterUsers);
                     }
@@ -106,5 +115,12 @@ public class PostLikedByActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         onBackPressed(); //go to previous activity
         return super.onSupportNavigateUp();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Unregister VisualizerActivity as an OnPreferenceChangedListener to avoid any memory leaks.
+        PreferenceManager.getDefaultSharedPreferences(PostLikedByActivity.this);
     }
 }

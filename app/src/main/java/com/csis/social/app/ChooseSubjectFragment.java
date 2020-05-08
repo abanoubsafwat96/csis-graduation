@@ -89,7 +89,7 @@ public class ChooseSubjectFragment extends Fragment {
                 databaseReference.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        ArrayList<String> list = Utilities.getAllSubjects(dataSnapshot);
+                        ArrayList<String> list = Utilities.getAllSubjectsFromSemester(dataSnapshot);
                         fillListView(list);
                     }
 

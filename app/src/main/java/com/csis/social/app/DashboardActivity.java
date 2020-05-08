@@ -2,24 +2,26 @@ package com.csis.social.app;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import androidx.annotation.NonNull;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.view.MenuItem;
+
 import com.csis.social.app.fragments.ChatListFragment;
 import com.csis.social.app.fragments.HomeFragment;
 import com.csis.social.app.fragments.ProfileFragment;
 import com.csis.social.app.fragments.UsersFragment;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.view.MenuItem;
 import com.csis.social.app.notifications.Token;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentTransaction;
 
 public class DashboardActivity extends AppCompatActivity {
 
@@ -29,19 +31,21 @@ public class DashboardActivity extends AppCompatActivity {
     ActionBar actionBar;
 
     String mUID;
-    private FirebaseDatabase firebaseDatabase;
-    private DatabaseReference yearsDatabaseReference,classesDatabaseReference2;
+
     private String userType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_dashboard);
-
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
         //reading from shared preference
         userType = sharedPreferences.getString("userType", "not found");
+
+        if (userType.equals("Student"))
+            setContentView(R.layout.activity_student_dashboard);
+        else if (userType.equals("Admin"))
+            setContentView(R.layout.activity_admin_dashboard);
 
         //Actionbar and its title
         actionBar = getSupportActionBar();
@@ -97,14 +101,14 @@ public class DashboardActivity extends AppCompatActivity {
                                 ChooseSubjectFragment chooseSubjectFragment = new ChooseSubjectFragment();
                                 ft = getSupportFragmentManager().beginTransaction();
                                 ft.replace(R.id.content, chooseSubjectFragment, "");
-                            
-                            }else if (userType.equals("Student")){
+
+                            } else if (userType.equals("Student")) {
                                 ChooseQuizFragment chooseQuizFragment = new ChooseQuizFragment();
                                 ft = getSupportFragmentManager().beginTransaction();
                                 ft.replace(R.id.content, chooseQuizFragment, "");
                             }
                             ft.commit();
-                            return  true;
+                            return true;
                         case R.id.nav_profile:
                             //profile fragment transaction
                             actionBar.setTitle("Profile");//change actionbar title
@@ -160,7 +164,6 @@ public class DashboardActivity extends AppCompatActivity {
 
             //update token
             updateToken(FirebaseInstanceId.getInstance().getToken());
-
 
         } else {
             //user not signed in, go to main acitivity

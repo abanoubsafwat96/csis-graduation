@@ -6,15 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
-import androidx.annotation.NonNull;
-import androidx.core.content.FileProvider;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.appcompat.widget.PopupMenu;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
@@ -30,7 +22,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.csis.social.app.R;
 import com.csis.social.app.adapters.AdapterComments;
 import com.csis.social.app.models.ModelComment;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -55,11 +46,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 public class PostDetailActivity extends AppCompatActivity {
 
 
     //to get detail of user and post
-    String hisUid, myUid, myEmail, myName, myDp,
+    String hisUid,hisNode, myUid, myEmail, myName, myDp,
     postId, pLikes, hisDp, hisName, pImage;
 
     boolean mProcessComment = false;
@@ -85,10 +84,15 @@ public class PostDetailActivity extends AppCompatActivity {
     ImageButton sendBtn;
     ImageView cAvatarIv;
 
+    private String userType;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post_detail);
+
+        SharedPreferences  mPrefs = PreferenceManager.getDefaultSharedPreferences(PostDetailActivity.this);
+        userType=mPrefs.getString("userType","");
 
         //Actionbar and its properties
         ActionBar actionBar = getSupportActionBar();
@@ -191,7 +195,7 @@ public class PostDetailActivity extends AppCompatActivity {
         });
     }
 
-    private void addToHisNotifications(String hisUid, String pId, String notification){
+    private void addToHisNotifications(String hisUid,String hisNode, String pId, String notification){
         //timestamp for time and notification id
         String timestamp = ""+System.currentTimeMillis();
 
@@ -203,7 +207,7 @@ public class PostDetailActivity extends AppCompatActivity {
         hashMap.put("notification", notification);
         hashMap.put("sUid", myUid);
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference(hisNode);
         ref.child(hisUid).child("Notifications").child(timestamp).setValue(hashMap)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -477,10 +481,15 @@ public class PostDetailActivity extends AppCompatActivity {
                     else {
                         // not liked, like it
                         postsRef.child(postId).child("pLikes").setValue(""+(Integer.parseInt(pLikes)+1));
-                        likesRef.child(postId).child(myUid).setValue("Liked"); //set any value
+
+                        if (userType.equals("Student"))
+                            likesRef.child(postId).child(myUid).setValue("Users"); // set user node
+                        else if (userType.equals("Admin"))
+                            likesRef.child(postId).child(myUid).setValue("Admins"); // set user node
+
                         mProcessLike = false;
 
-                        addToHisNotifications(""+hisUid, ""+postId, "Liked your post");
+                        addToHisNotifications(""+ hisUid, hisNode,""+postId, "Liked your post");
                     }
                 }
             }
@@ -531,7 +540,7 @@ public class PostDetailActivity extends AppCompatActivity {
                         commentEt.setText("");
                         updateCommentCount();
 
-                        addToHisNotifications(""+hisUid,""+postId,"Commented on your post");
+                        addToHisNotifications(""+hisUid,hisNode,""+postId,"Commented on your post");
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -614,6 +623,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     pImage = ""+ds.child("pImage").getValue();
                     hisDp = ""+ds.child("uDp").getValue();
                     hisUid = ""+ds.child("uid").getValue();
+                    hisNode = ""+ds.child("userNode").getValue();
                     String uEmail = ""+ds.child("uEmail").getValue();
                     hisName = ""+ds.child("uName").getValue();
                     String commentCount = ""+ds.child("pComments").getValue();

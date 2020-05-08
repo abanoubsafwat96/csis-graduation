@@ -13,24 +13,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.csis.social.app.AddPostActivity;
-import com.csis.social.app.MainActivity;
-import com.csis.social.app.R;
-import com.csis.social.app.SettingsActivity;
-import com.csis.social.app.models.ModelPost;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
-import androidx.fragment.app.Fragment;
-import androidx.core.content.ContextCompat;
-import androidx.core.view.MenuItemCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.appcompat.widget.SearchView;
-
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -45,10 +27,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.csis.social.app.AddPostActivity;
+import com.csis.social.app.MainActivity;
+import com.csis.social.app.R;
+import com.csis.social.app.SettingsActivity;
+import com.csis.social.app.SubjectsFollowActivity;
 import com.csis.social.app.adapters.AdapterPosts;
+import com.csis.social.app.models.ModelPost;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
@@ -66,6 +55,15 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SearchView;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.MenuItemCompat;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import static android.app.Activity.RESULT_OK;
 import static com.google.firebase.storage.FirebaseStorage.getInstance;
@@ -114,6 +112,8 @@ public class ProfileFragment extends Fragment {
     //for checking profile or cover photo
     String profileOrCoverPhoto;
 
+    private String userType;
+
     public ProfileFragment() {
         // Required empty public constructor
     }
@@ -125,12 +125,19 @@ public class ProfileFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
+        SharedPreferences  mPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        userType=mPrefs.getString("userType","");
 
         //init firebase
         firebaseAuth = FirebaseAuth.getInstance();
         user = firebaseAuth.getCurrentUser();
         firebaseDatabase = FirebaseDatabase.getInstance();
-        databaseReference = firebaseDatabase.getReference("Users");
+
+        if (userType.equals("Student"))
+            databaseReference = firebaseDatabase.getReference("Users");
+        else if (userType.equals("Admin"))
+            databaseReference = firebaseDatabase.getReference("Admins");
+
         storageReference = getInstance().getReference(); //firebase storage reference
 
         //init arrays of permissions
@@ -240,7 +247,7 @@ public class ProfileFragment extends Fragment {
                     postList.add(myPosts);
 
                     //adapter
-                    adapterPosts = new AdapterPosts(getActivity(), postList);
+                    adapterPosts = new AdapterPosts(getActivity(), postList,userType);
                     //set this adapter to recyclerview
                     postsRecyclerView.setAdapter(adapterPosts);
                 }
@@ -284,7 +291,7 @@ public class ProfileFragment extends Fragment {
                     }
 
                     //adapter
-                    adapterPosts = new AdapterPosts(getActivity(), postList);
+                    adapterPosts = new AdapterPosts(getActivity(), postList,userType);
                     //set this adapter to recyclerview
                     postsRecyclerView.setAdapter(adapterPosts);
                 }
@@ -337,7 +344,7 @@ public class ProfileFragment extends Fragment {
          * 5) Change Password*/
 
         //options to show in dialog
-        String options[] = {"Edit Profile Picture", "Edit Cover Photo", "Edit Name", "Edit Phone", "Change Password"};
+        String options[] = {"Edit Profile Picture", "Edit Cover Photo", "Edit Name", "Edit Phone", "Change Password", "Follow/UnFollow Subjects"};
         //alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         //set title
@@ -366,16 +373,25 @@ public class ProfileFragment extends Fragment {
                     //Edit Phone clicked
                     pd.setMessage("Updating Phone");
                     showNamePhoneUpdateDialog("phone");
-                }
-                else if (which == 4) {
+                } else if (which == 4) {
                     //Edit Phone clicked
                     pd.setMessage("Changing Password");
                     showChangePasswordDialog();
+                } else if (which == 5) {
+                    //Edit Phone clicked
+                    pd.setMessage("Follow/UnFollow Subjects");
+                    startSubjectFollowActivity();
                 }
             }
         });
         //create and show dialog
         builder.create().show();
+    }
+
+    private void startSubjectFollowActivity() {
+        Intent intent = new Intent(getContext(), SubjectsFollowActivity.class);
+        intent.putExtra("startedFrom", "Profile");
+        startActivity(intent);
     }
 
     private void showChangePasswordDialog() {
@@ -399,11 +415,11 @@ public class ProfileFragment extends Fragment {
                 //validate data
                 String oldPassword = passwordEt.getText().toString().trim();
                 String newPassword = newPasswordEt.getText().toString().trim();
-                if (TextUtils.isEmpty(oldPassword)){
+                if (TextUtils.isEmpty(oldPassword)) {
                     Toast.makeText(getActivity(), "Enter your current password...", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                if (newPassword.length()<6){
+                if (newPassword.length() < 6) {
                     Toast.makeText(getActivity(), "Password length must atleast 6 characters...", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -442,7 +458,7 @@ public class ProfileFragment extends Fragment {
                                     public void onFailure(@NonNull Exception e) {
                                         //failed updating password, show reason
                                         pd.dismiss();
-                                        Toast.makeText(getActivity(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
                     }
@@ -452,7 +468,7 @@ public class ProfileFragment extends Fragment {
                     public void onFailure(@NonNull Exception e) {
                         //authentication failed, show reason
                         pd.dismiss();
-                        Toast.makeText(getActivity(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -811,8 +827,6 @@ public class ProfileFragment extends Fragment {
                         Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
-
-
     }
 
     private void pickFromCamera() {
@@ -919,7 +933,7 @@ public class ProfileFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    public void clearSharedPreference(){
+    public void clearSharedPreference() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         //editing into shared preference
         SharedPreferences.Editor editor = sharedPreferences.edit();

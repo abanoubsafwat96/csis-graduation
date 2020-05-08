@@ -71,27 +71,30 @@ public class ChooseQuizFragment extends Fragment {
 
                 quizzes_list = new ArrayList<>();
 
-                for (int i = 0; i < subjects_list.size(); i++) {
-                    final int position = i;
-                    final String subject = subjects_list.get(position);
+                if (subjects_list.size()>0) {
+                    for (int i = 0; i < subjects_list.size(); i++) {
+                        final int position = i;
+                        final String subject = subjects_list.get(position);
 
-                    firebaseDatabase.getReference().child("Quizzes").child(subject)
-                            .addValueEventListener(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                    ArrayList<Quiz> reversed_quizzes_list = Utilities.gettAllQuizzes(dataSnapshot, subject);
-                                    quizzes_list.addAll(reverseList(reversed_quizzes_list));
+                        firebaseDatabase.getReference().child("Quizzes").child(subject)
+                                .addValueEventListener(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        ArrayList<Quiz> reversed_quizzes_list = Utilities.gettAllQuizzes(dataSnapshot, subject);
+                                        quizzes_list.addAll(reverseList(reversed_quizzes_list));
 
-                                    if (position == subjects_list.size() - 1)
-                                        fillListView(quizzes_list);
-                                }
+                                        if (position == subjects_list.size() - 1)
+                                            fillListView(quizzes_list);
+                                    }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError databaseError) {
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                                }
-                            });
-                }
+                                    }
+                                });
+                    }
+                }else if (subjects_list.size()==0)
+                    fillListView(new ArrayList<Quiz>());
             }
 
             @Override

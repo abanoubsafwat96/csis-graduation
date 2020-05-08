@@ -28,7 +28,7 @@ public class CalendarDialogFragment extends DialogFragment {
     CompactCalendarView compactCalendarView;
     private SimpleDateFormat dateFormatForMonth;
 
-    private static Communicator communicator;
+    private static Communicator.AddQuizFragment communicator;
 
     /**
      * Create a new instance of MyDialogFragment, to pass "newUser" as an argument to this dialog.
@@ -37,7 +37,7 @@ public class CalendarDialogFragment extends DialogFragment {
      * 2. setter to initialize your object
      * 3. and add setRetainInstance(true); in onCreate
      */
-    static CalendarDialogFragment newInstance(Communicator targetCommunicator) {
+    static CalendarDialogFragment newInstance(Communicator.AddQuizFragment targetCommunicator) {
 
         CalendarDialogFragment f = new CalendarDialogFragment();
         communicator = targetCommunicator;

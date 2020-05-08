@@ -2,19 +2,23 @@ package com.csis.social.app.adapters;
 
 import android.content.Context;
 import android.content.Intent;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import com.csis.social.app.ChatActivity;
 import com.csis.social.app.R;
 import com.csis.social.app.models.ModelUser;
 import com.squareup.picasso.Picasso;
+
 import java.util.HashMap;
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class AdapterChatlist extends RecyclerView.Adapter<AdapterChatlist.MyHolder> {
 
@@ -47,25 +51,26 @@ public class AdapterChatlist extends RecyclerView.Adapter<AdapterChatlist.MyHold
 
         //set data
         myHolder.nameTv.setText(userName);
-        if (lastMessage==null || lastMessage.equals("default")){
+        if (lastMessage == null || lastMessage.equals("default")) {
             myHolder.lastMessageTv.setVisibility(View.GONE);
-        }
-        else {
+        } else {
             myHolder.lastMessageTv.setVisibility(View.VISIBLE);
             myHolder.lastMessageTv.setText(lastMessage);
         }
         try {
-            Picasso.get().load(userImage).placeholder(R.drawable.ic_default_img).into(myHolder.profileIv);
-        }
-        catch (Exception e){
+            if (!TextUtils.isEmpty(userImage))
+                Picasso.get().load(userImage).placeholder(R.drawable.ic_default_img).into(myHolder.profileIv);
+            else
+                Picasso.get().load(R.drawable.ic_default_img).into(myHolder.profileIv);
+        } catch (Exception e) {
             Picasso.get().load(R.drawable.ic_default_img).into(myHolder.profileIv);
         }
         //set online status of other users in chatlist
-        if (userList.get(i).getOnlineStatus().equals("online")){
+        String onlineStatues = userList.get(i).getOnlineStatus();
+        if (onlineStatues != null && onlineStatues.equals("online")) {
             //online
             myHolder.onlineStatusIv.setImageResource(R.drawable.circle_online);
-        }
-        else {
+        } else {
             //offline
             myHolder.onlineStatusIv.setImageResource(R.drawable.circle_offline);
         }
@@ -83,7 +88,7 @@ public class AdapterChatlist extends RecyclerView.Adapter<AdapterChatlist.MyHold
 
     }
 
-    public void setLastMessageMap(String userId, String lastMessage){
+    public void setLastMessageMap(String userId, String lastMessage) {
         lastMessageMap.put(userId, lastMessage);
     }
 
@@ -93,7 +98,7 @@ public class AdapterChatlist extends RecyclerView.Adapter<AdapterChatlist.MyHold
     }
 
 
-    static class MyHolder extends RecyclerView.ViewHolder{
+    static class MyHolder extends RecyclerView.ViewHolder {
         //views of row_chatlist.xml
         ImageView profileIv, onlineStatusIv;
         TextView nameTv, lastMessageTv;

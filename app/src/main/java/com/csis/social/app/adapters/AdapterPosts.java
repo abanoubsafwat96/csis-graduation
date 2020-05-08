@@ -6,10 +6,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
-import androidx.annotation.NonNull;
-import androidx.core.content.FileProvider;
-import androidx.appcompat.widget.PopupMenu;
-import androidx.recyclerview.widget.RecyclerView;
 import android.text.format.DateFormat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -50,6 +46,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.RecyclerView;
+
 public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
 
 
@@ -61,11 +62,14 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
     private DatabaseReference likesRef; //for likes database node
     private DatabaseReference postsRef; //reference of posts
 
-    boolean mProcessLike=false;
+    boolean mProcessLike = false;
 
-    public AdapterPosts(Context context, List<ModelPost> postList) {
+    private String userType;
+
+    public AdapterPosts(Context context, List<ModelPost> postList, String userType) {
         this.context = context;
         this.postList = postList;
+        this.userType = userType;
         myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         likesRef = FirebaseDatabase.getInstance().getReference().child("Likes");
         postsRef = FirebaseDatabase.getInstance().getReference().child("Posts");
@@ -84,6 +88,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
     public void onBindViewHolder(@NonNull final MyHolder myHolder, final int i) {
         //get data
         final String uid = postList.get(i).getUid();
+        final String userNode = postList.get(i).getUserNode();
         String uEmail = postList.get(i).getuEmail();
         String uName = postList.get(i).getuName();
         String uDp = postList.get(i).getuDp();
@@ -105,33 +110,30 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         myHolder.pTimeTv.setText(pTime);
         myHolder.pTitleTv.setText(pTitle);
         myHolder.pDescriptionTv.setText(pDescription);
-        myHolder.pLikesTv.setText(pLikes +" Likes"); //e.g. 100 Likes
-        myHolder.pCommentsTv.setText(pComments +" Comments"); //e.g. 100 Likes
+        myHolder.pLikesTv.setText(pLikes + " Likes"); //e.g. 100 Likes
+        myHolder.pCommentsTv.setText(pComments + " Comments"); //e.g. 100 Likes
         //set likes for each post
         setLikes(myHolder, pId);
 
         //set user dp
         try {
             Picasso.get().load(uDp).placeholder(R.drawable.ic_default_img).into(myHolder.uPictureIv);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
 
         }
 
         //set post image
         //if there is no image i.e. pImage.equals("noImage") then hide ImageView
-        if (pImage.equals("noImage")){
+        if (pImage.equals("noImage")) {
             //hide imageview
             myHolder.pImageIv.setVisibility(View.GONE);
-        }
-        else {
+        } else {
             //show imageview
             myHolder.pImageIv.setVisibility(View.VISIBLE);
 
             try {
                 Picasso.get().load(pImage).into(myHolder.pImageIv);
-            }
-            catch (Exception e){
+            } catch (Exception e) {
 
             }
         }
@@ -156,20 +158,24 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
                 likesRef.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        if (mProcessLike){
-                            if (dataSnapshot.child(postIde).hasChild(myUid)){
+                        if (mProcessLike) {
+                            if (dataSnapshot.child(postIde).hasChild(myUid)) {
                                 //already liked, so remove like
-                                postsRef.child(postIde).child("pLikes").setValue(""+(pLikes-1));
+                                postsRef.child(postIde).child("pLikes").setValue("" + (pLikes - 1));
                                 likesRef.child(postIde).child(myUid).removeValue();
                                 mProcessLike = false;
-                            }
-                            else {
+                            } else {
                                 // not liked, like it
-                                postsRef.child(postIde).child("pLikes").setValue(""+(pLikes+1));
-                                likesRef.child(postIde).child(myUid).setValue("Liked"); //set any value
+                                postsRef.child(postIde).child("pLikes").setValue("" + (pLikes + 1));
+
+                                if (userType.equals("Student"))
+                                    likesRef.child(postIde).child(myUid).setValue("Users"); // set user node
+                                else if (userType.equals("Admin"))
+                                    likesRef.child(postIde).child(myUid).setValue("Admins"); // set user node
+
                                 mProcessLike = false;
 
-                                addToHisNotifications(""+uid, ""+pId, "Liked your post");
+                                addToHisNotifications("" + uid, userNode, "" + pId, "Liked your post");
                             }
                         }
                     }
@@ -196,12 +202,11 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
                 /*some posts contains only text, and some contains image and text so,
         we will handle them both*/
                 //get image from imageview
-                BitmapDrawable bitmapDrawable = (BitmapDrawable)myHolder.pImageIv.getDrawable();
-                if (bitmapDrawable == null){
+                BitmapDrawable bitmapDrawable = (BitmapDrawable) myHolder.pImageIv.getDrawable();
+                if (bitmapDrawable == null) {
                     //post without image
                     shareTextOnly(pTitle, pDescription);
-                }
-                else {
+                } else {
                     //post with image
 
                     //convert image to bitmap
@@ -217,7 +222,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
                 /*click to go to ThereProfileActivity with uid, this uid is of clicked user
                  * which will be used to show user specific data/posts*/
                 Intent intent = new Intent(context, ThereProfileActivity.class);
-                intent.putExtra("uid",uid);
+                intent.putExtra("uid", uid);
                 context.startActivity(intent);
             }
         });
@@ -236,9 +241,9 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
 
     }
 
-    private void addToHisNotifications(String hisUid, String pId, String notification){
+    private void addToHisNotifications(String hisUid, String userNode, String pId, String notification) {
         //timestamp for time and notification id
-        String timestamp = ""+System.currentTimeMillis();
+        String timestamp = "" + System.currentTimeMillis();
 
         //data to put in notification in firebase
         HashMap<Object, String> hashMap = new HashMap<>();
@@ -248,7 +253,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         hashMap.put("notification", notification);
         hashMap.put("sUid", myUid);
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference(userNode);
         ref.child(hisUid).child("Notifications").child(timestamp).setValue(hashMap)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
@@ -266,7 +271,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
 
     private void shareTextOnly(String pTitle, String pDescription) {
         //concatenate title and description to share
-        String shareBody = pTitle +"\n"+ pDescription;
+        String shareBody = pTitle + "\n" + pDescription;
 
         //share intent
         Intent sIntent = new Intent(Intent.ACTION_SEND);
@@ -279,7 +284,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
 
     private void shareImageAndText(String pTitle, String pDescription, Bitmap bitmap) {
         //concatenate title and description to share
-        String shareBody = pTitle +"\n"+ pDescription;
+        String shareBody = pTitle + "\n" + pDescription;
 
         //first we will save this image in cache, get the saved image uri
         Uri uri = saveImageToShare(bitmap);
@@ -306,9 +311,8 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
             stream.close();
             uri = FileProvider.getUriForFile(context, "com.blogspot.atifsoftwares.firebaseapp.fileprovider",
                     file);
-        }
-        catch (Exception e){
-            Toast.makeText(context, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(context, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
 
         }
         return uri;
@@ -318,20 +322,19 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         likesRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.child(postKey).hasChild(myUid)){
+                if (dataSnapshot.child(postKey).hasChild(myUid)) {
                     //user has liked this post
                     /*To indicate that the post is liked by this(SignedIn) user
                     Change drawable left icon of like button
                     Change text of like button from "Like" to "Liked"*/
-                    holder.likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_liked, 0,0,0);
+                    holder.likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_liked, 0, 0, 0);
                     holder.likeBtn.setText("Liked");
-                }
-                else {
+                } else {
                     //user has not liked this post
                     /*To indicate that the post is not liked by this(SignedIn) user
                     Change drawable left icon of like button
                     Change text of like button from "Liked" to "Like"*/
-                    holder.likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like_black, 0,0,0);
+                    holder.likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like_black, 0, 0, 0);
                     holder.likeBtn.setText("Like");
                 }
             }
@@ -348,7 +351,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         PopupMenu popupMenu = new PopupMenu(context, moreBtn, Gravity.END);
 
         //show delete option in only post(s) of currently signed-in user
-        if (uid.equals(myUid)){
+        if (uid.equals(myUid)) {
             //add items in menu
             popupMenu.getMenu().add(Menu.NONE, 0, 0, "Delete");
             popupMenu.getMenu().add(Menu.NONE, 1, 0, "Edit");
@@ -360,19 +363,17 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
                 int id = menuItem.getItemId();
-                if (id==0){
+                if (id == 0) {
                     //delete is clicked
                     beginDelete(pId, pImage);
-                }
-                else if (id==1){
+                } else if (id == 1) {
                     //Edit is clicked
                     //start AddPostActivity with key "editPost" and the id of the post clicked
                     Intent intent = new Intent(context, AddPostActivity.class);
                     intent.putExtra("key", "editPost");
                     intent.putExtra("editPostId", pId);
                     context.startActivity(intent);
-                }
-                else if (id==2){
+                } else if (id == 2) {
                     //start PostDetailActivity
                     Intent intent = new Intent(context, PostDetailActivity.class);
                     intent.putExtra("postId", pId); //will get detail of post using this id, its id of the post clicked
@@ -389,11 +390,10 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
     private void beginDelete(String pId, String pImage) {
         //post can be with or without image
 
-        if (pImage.equals("noImage")){
+        if (pImage.equals("noImage")) {
             //post is without image
             deleteWithoutImage(pId);
-        }
-        else {
+        } else {
             //post is with image
             deleteWithImage(pId, pImage);
         }
@@ -419,7 +419,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
                         fquery.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                for (DataSnapshot ds: dataSnapshot.getChildren()){
+                                for (DataSnapshot ds : dataSnapshot.getChildren()) {
                                     ds.getRef().removeValue(); // remove values from firebase where pid matches
                                 }
                                 //deleted
@@ -440,7 +440,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
                     public void onFailure(@NonNull Exception e) {
                         //failed, can't go further
                         pd.dismiss();
-                        Toast.makeText(context, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -453,7 +453,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         fquery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot ds: dataSnapshot.getChildren()){
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     ds.getRef().removeValue(); // remove values from firebase where pid matches
                 }
                 //deleted
@@ -474,7 +474,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
     }
 
     //view holder class
-    class MyHolder extends RecyclerView.ViewHolder{
+    class MyHolder extends RecyclerView.ViewHolder {
 
         //views from row_post.xml
         ImageView uPictureIv, pImageIv;

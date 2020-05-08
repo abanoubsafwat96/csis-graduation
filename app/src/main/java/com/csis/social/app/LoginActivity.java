@@ -48,6 +48,7 @@ public class LoginActivity extends AppCompatActivity {
     GoogleSignInClient mGoogleSignInClient;
 
     //views
+    TextView loginTitle;
     EditText mEmailEt, mPasswordEt;
     TextView notHaveAccntTv, mRecoverPassTv;
     Button mLoginBtn;
@@ -92,6 +93,7 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
 
         //init
+        loginTitle= findViewById(R.id.loginTitle);
         mEmailEt = findViewById(R.id.emailEt);
         mPasswordEt = findViewById(R.id.passwordEt);
         notHaveAccntTv = findViewById(R.id.nothave_accountTv);
@@ -99,10 +101,14 @@ public class LoginActivity extends AppCompatActivity {
         mLoginBtn = findViewById(R.id.loginBtn);
         mGoogleLoginBtn = findViewById(R.id.googleLoginBtn);
 
-        if (userType.equals("Admin"))
+        if (userType.equals("Admin")) {
             mGoogleLoginBtn.setVisibility(View.INVISIBLE);
+            loginTitle.setText("Login as Admin");
 
-            //login button click
+        }else if (userType.equals("Student"))
+            loginTitle.setText("Login as Student");
+
+        //login button click
         mLoginBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -247,7 +253,7 @@ public class LoginActivity extends AppCompatActivity {
 
                                     if (isFound) {
                                         setupSharedPreferences();
-                                        startActivity(new Intent(LoginActivity.this, DashboardActivity.class));
+                                        startDashboardActivity();
                                         finish();
                                     } else {
                                         mAuth.signOut();
@@ -353,7 +359,7 @@ public class LoginActivity extends AppCompatActivity {
                                             //show user email in toast
                                             Toast.makeText(LoginActivity.this, "" + user.getEmail(), Toast.LENGTH_SHORT).show();
                                             //go to profile activity after logged in
-                                            startActivity(new Intent(LoginActivity.this, DashboardActivity.class));
+                                            startDashboardActivity();
                                             finish();
                                             //updateUI(user);
                                         } else {
@@ -382,6 +388,11 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private void startDashboardActivity() {
+        Intent i = new Intent(LoginActivity.this, DashboardActivity.class);
+        startActivity(i);
     }
 
     private void setupSharedPreferences() {

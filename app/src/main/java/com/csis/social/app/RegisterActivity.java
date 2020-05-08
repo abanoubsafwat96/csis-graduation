@@ -92,7 +92,9 @@ public class RegisterActivity extends AppCompatActivity {
         mHaveAccountTv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+                Intent i=new Intent(RegisterActivity.this, LoginActivity.class);
+                i.putExtra("userType","Student");
+                startActivity(i);
                 finish();
             }
         });
@@ -130,7 +132,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                             //firebase database isntance
                             FirebaseDatabase database = FirebaseDatabase.getInstance();
-                            //path to store user data named "Users"
+                            //path to sto   re user data named "Users"
                             DatabaseReference reference = database.getReference("Users");
                             //put data within hashmap in database
                             reference.child(uid).setValue(hashMap);
@@ -138,7 +140,7 @@ public class RegisterActivity extends AppCompatActivity {
                             setupSharedPreferences();
 
                             Toast.makeText(RegisterActivity.this, "Registered...\n"+user.getEmail(), Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(RegisterActivity.this, DashboardActivity.class));
+                            startSubjectsFollowActivity();
                             finish();
                         } else {
                             // If sign in fails, display a message to the user.
@@ -164,6 +166,12 @@ public class RegisterActivity extends AppCompatActivity {
         editor = sharedPreferences.edit();
         editor.putString("userType", "Student");
         editor.apply();
+    }
+
+    private void startSubjectsFollowActivity() {
+        Intent i=new Intent(RegisterActivity.this, SubjectsFollowActivity.class);
+        i.putExtra("startedFrom","Registration");
+        startActivity(i);
     }
 
     @Override
