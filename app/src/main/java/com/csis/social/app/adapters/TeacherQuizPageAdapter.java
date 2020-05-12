@@ -1,4 +1,4 @@
-package com.csis.social.app;
+package com.csis.social.app.adapters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
-class TeacherQuizPageAdapter extends FragmentPagerAdapter {
+public class TeacherQuizPageAdapter extends FragmentPagerAdapter {
 
     private final List<Fragment> mFragmentList = new ArrayList<>();
     private final List<String> mFragmentTitleList = new ArrayList<>();

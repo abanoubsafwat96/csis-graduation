@@ -2,6 +2,7 @@ package com.csis.social.app;
 
 import android.os.Bundle;
 
+import com.csis.social.app.adapters.TeacherQuizPageAdapter;
 import com.google.android.material.tabs.TabLayout;
 
 import androidx.appcompat.app.AppCompatActivity;

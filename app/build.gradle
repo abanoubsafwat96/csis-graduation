@@ -21,6 +21,10 @@ android {
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
         //Before using Vector Asset Studio, you must add this statement
+        multiDexEnabled true
+    }
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -53,4 +57,10 @@ dependencies {
     implementation 'com.github.sundeepk:compact-calendar-view:3.0.0'
     implementation 'com.roomorama:caldroid:3.0.1'
     implementation 'com.android.support:design:29.1.1'
+
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.10.8'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.10.8'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.10.8'
+    implementation 'com.google.android.exoplayer:exoplayer-smoothstreaming:2.10.8'
+    implementation 'com.android.support:multidex:1.0.3'
 }

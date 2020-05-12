@@ -1,6 +1,8 @@
 package com.csis.social.app;
 
+import android.app.DownloadManager;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -24,6 +26,14 @@ import android.widget.Toast;
 
 import com.csis.social.app.adapters.AdapterComments;
 import com.csis.social.app.models.ModelComment;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.util.Util;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -50,6 +60,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -58,23 +69,25 @@ public class PostDetailActivity extends AppCompatActivity {
 
 
     //to get detail of user and post
-    String hisUid,hisNode, myUid, myEmail, myName, myDp,
-    postId, pLikes, hisDp, hisName, pImage;
+    String hisUid, hisNode, myUid, myEmail, myName, myDp, pTimeStamp,
+            postId, pLikes, hisDp, hisName, pImage, pVideo, pVideoName;
 
     boolean mProcessComment = false;
     boolean mProcessLike = false;
-
 
     //progress bar
     ProgressDialog pd;
 
     //views
     ImageView uPictureIv, pImageIv;
-    TextView uNameTv, pTimeTiv, pTitleTv, pDescriptionTv, pLikesTv, pCommentsTv;
+    TextView uNameTv, pTimeTiv, pTitleTv, pDescriptionTv, pLikesTv, pCommentsTv, videoName;
     ImageButton moreBtn;
     Button likeBtn, shareBtn;
     LinearLayout profileLayout;
     RecyclerView recyclerView;
+    private PlayerView playerView;
+    private ImageButton downloud_btn;
+    ConstraintLayout downloud_constraintLayout;
 
     List<ModelComment> commentList;
     AdapterComments adapterComments;
@@ -85,14 +98,15 @@ public class PostDetailActivity extends AppCompatActivity {
     ImageView cAvatarIv;
 
     private String userType;
+    private SimpleExoPlayer simpleExoPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_post_detail);
 
-        SharedPreferences  mPrefs = PreferenceManager.getDefaultSharedPreferences(PostDetailActivity.this);
-        userType=mPrefs.getString("userType","");
+        SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(PostDetailActivity.this);
+        userType = mPrefs.getString("userType", "");
 
         //Actionbar and its properties
         ActionBar actionBar = getSupportActionBar();
@@ -123,6 +137,10 @@ public class PostDetailActivity extends AppCompatActivity {
         sendBtn = findViewById(R.id.sendBtn);
         cAvatarIv = findViewById(R.id.cAvatarIv);
 
+        playerView = findViewById(R.id.playerView);
+        downloud_btn = findViewById(R.id.downloud_btn);
+        downloud_constraintLayout = findViewById(R.id.downloud_constraintLayout);
+        videoName = findViewById(R.id.videoName);
 
         loadPostInfo();
 
@@ -134,7 +152,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
 
         //set subtitle of actionbar
-        actionBar.setSubtitle("SignedIn as: "+myEmail);
+        actionBar.setSubtitle("SignedIn as: " + myEmail);
 
         loadComments();
 
@@ -169,12 +187,11 @@ public class PostDetailActivity extends AppCompatActivity {
                 String pTitle = pTitleTv.getText().toString().trim();
                 String pDescription = pDescriptionTv.getText().toString().trim();
 
-                BitmapDrawable bitmapDrawable = (BitmapDrawable)pImageIv.getDrawable();
-                if (bitmapDrawable == null){
+                BitmapDrawable bitmapDrawable = (BitmapDrawable) pImageIv.getDrawable();
+                if (bitmapDrawable == null) {
                     //post without image
                     shareTextOnly(pTitle, pDescription);
-                }
-                else {
+                } else {
                     //post with image
 
                     //convert image to bitmap
@@ -193,11 +210,36 @@ public class PostDetailActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        downloud_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (pImage == null && pVideo != null && pVideoName != null) {
+
+                    FirebaseStorage storage = FirebaseStorage.getInstance();
+                    StorageReference videoRef = storage.getReference().child("Posts/post_" + pTimeStamp);
+
+                    videoRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                        @Override
+                        public void onSuccess(Uri uri) {
+
+                            Toast.makeText(PostDetailActivity.this, "Downlouding started", Toast.LENGTH_SHORT).show();
+                            downloudFile(PostDetailActivity.this, pVideoName, uri);
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(PostDetailActivity.this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+        });
     }
 
-    private void addToHisNotifications(String hisUid,String hisNode, String pId, String notification){
+    private void addToHisNotifications(String hisUid, String hisNode, String pId, String notification) {
         //timestamp for time and notification id
-        String timestamp = ""+System.currentTimeMillis();
+        String timestamp = "" + System.currentTimeMillis();
 
         //data to put in notification in firebase
         HashMap<Object, String> hashMap = new HashMap<>();
@@ -225,7 +267,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private void shareTextOnly(String pTitle, String pDescription) {
         //concatenate title and description to share
-        String shareBody = pTitle +"\n"+ pDescription;
+        String shareBody = pTitle + "\n" + pDescription;
 
         //share intent
         Intent sIntent = new Intent(Intent.ACTION_SEND);
@@ -238,7 +280,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
     private void shareImageAndText(String pTitle, String pDescription, Bitmap bitmap) {
         //concatenate title and description to share
-        String shareBody = pTitle +"\n"+ pDescription;
+        String shareBody = pTitle + "\n" + pDescription;
 
         //first we will save this image in cache, get the saved image uri
         Uri uri = saveImageToShare(bitmap);
@@ -264,9 +306,8 @@ public class PostDetailActivity extends AppCompatActivity {
             stream.flush();
             stream.close();
             uri = FileProvider.getUriForFile(this, "com.blogspot.atifsoftwares.firebaseapp.fileprovider", file);
-        }
-        catch (Exception e){
-            Toast.makeText(this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
 
         }
         return uri;
@@ -288,7 +329,7 @@ public class PostDetailActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 commentList.clear();
-                for (DataSnapshot ds: dataSnapshot.getChildren()){
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     ModelComment modelComment = ds.getValue(ModelComment.class);
 
                     commentList.add(modelComment);
@@ -316,7 +357,7 @@ public class PostDetailActivity extends AppCompatActivity {
         PopupMenu popupMenu = new PopupMenu(this, moreBtn, Gravity.END);
 
         //show delete option in only post(s) of currently signed-in user
-        if (hisUid.equals(myUid)){
+        if (hisUid.equals(myUid)) {
             //add items in menu
             popupMenu.getMenu().add(Menu.NONE, 0, 0, "Delete");
             popupMenu.getMenu().add(Menu.NONE, 1, 0, "Edit");
@@ -327,11 +368,10 @@ public class PostDetailActivity extends AppCompatActivity {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
                 int id = menuItem.getItemId();
-                if (id==0){
+                if (id == 0) {
                     //delete is clicked
                     beginDelete();
-                }
-                else if (id==1){
+                } else if (id == 1) {
                     //Edit is clicked
                     //start AddPostActivity with key "editPost" and the id of the post clicked
                     Intent intent = new Intent(PostDetailActivity.this, AddPostActivity.class);
@@ -349,11 +389,10 @@ public class PostDetailActivity extends AppCompatActivity {
     private void beginDelete() {
         //post can be with or without image
 
-        if (pImage.equals("noImage")){
+        if (pImage.equals("noImage")) {
             //post is without image
             deleteWithoutImage();
-        }
-        else {
+        } else {
             //post is with image
             deleteWithImage();
         }
@@ -379,7 +418,7 @@ public class PostDetailActivity extends AppCompatActivity {
                         fquery.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                for (DataSnapshot ds: dataSnapshot.getChildren()){
+                                for (DataSnapshot ds : dataSnapshot.getChildren()) {
                                     ds.getRef().removeValue(); // remove values from firebase where pid matches
                                 }
                                 //deleted
@@ -400,7 +439,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     public void onFailure(@NonNull Exception e) {
                         //failed, can't go further
                         pd.dismiss();
-                        Toast.makeText(PostDetailActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PostDetailActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -413,7 +452,7 @@ public class PostDetailActivity extends AppCompatActivity {
         fquery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot ds: dataSnapshot.getChildren()){
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     ds.getRef().removeValue(); // remove values from firebase where pid matches
                 }
                 //deleted
@@ -435,20 +474,19 @@ public class PostDetailActivity extends AppCompatActivity {
         likesRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.child(postId).hasChild(myUid)){
+                if (dataSnapshot.child(postId).hasChild(myUid)) {
                     //user has liked this post
                     /*To indicate that the post is liked by this(SignedIn) user
                     Change drawable left icon of like button
                     Change text of like button from "Like" to "Liked"*/
-                    likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_liked, 0,0,0);
+                    likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_liked, 0, 0, 0);
                     likeBtn.setText("Liked");
-                }
-                else {
+                } else {
                     //user has not liked this post
                     /*To indicate that the post is not liked by this(SignedIn) user
                     Change drawable left icon of like button
                     Change text of like button from "Liked" to "Like"*/
-                    likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like_black, 0,0,0);
+                    likeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_like_black, 0, 0, 0);
                     likeBtn.setText("Like");
                 }
             }
@@ -471,16 +509,15 @@ public class PostDetailActivity extends AppCompatActivity {
         likesRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (mProcessLike){
-                    if (dataSnapshot.child(postId).hasChild(myUid)){
+                if (mProcessLike) {
+                    if (dataSnapshot.child(postId).hasChild(myUid)) {
                         //already liked, so remove like
-                        postsRef.child(postId).child("pLikes").setValue(""+(Integer.parseInt(pLikes)-1));
+                        postsRef.child(postId).child("pLikes").setValue("" + (Integer.parseInt(pLikes) - 1));
                         likesRef.child(postId).child(myUid).removeValue();
                         mProcessLike = false;
-                    }
-                    else {
+                    } else {
                         // not liked, like it
-                        postsRef.child(postId).child("pLikes").setValue(""+(Integer.parseInt(pLikes)+1));
+                        postsRef.child(postId).child("pLikes").setValue("" + (Integer.parseInt(pLikes) + 1));
 
                         if (userType.equals("Student"))
                             likesRef.child(postId).child(myUid).setValue("Users"); // set user node
@@ -489,7 +526,7 @@ public class PostDetailActivity extends AppCompatActivity {
 
                         mProcessLike = false;
 
-                        addToHisNotifications(""+ hisUid, hisNode,""+postId, "Liked your post");
+                        addToHisNotifications("" + hisUid, hisNode, "" + postId, "Liked your post");
                     }
                 }
             }
@@ -508,7 +545,7 @@ public class PostDetailActivity extends AppCompatActivity {
         //get data from comment edit text
         String comment = commentEt.getText().toString().trim();
         //validate
-        if (TextUtils.isEmpty(comment)){
+        if (TextUtils.isEmpty(comment)) {
             //no value is entered
             Toast.makeText(this, "Comment is empty...", Toast.LENGTH_SHORT).show();
             return;
@@ -540,7 +577,7 @@ public class PostDetailActivity extends AppCompatActivity {
                         commentEt.setText("");
                         updateCommentCount();
 
-                        addToHisNotifications(""+hisUid,hisNode,""+postId,"Commented on your post");
+                        addToHisNotifications("" + hisUid, hisNode, "" + postId, "Commented on your post");
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -548,7 +585,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     public void onFailure(@NonNull Exception e) {
                         //failed, not added
                         pd.dismiss();
-                        Toast.makeText(PostDetailActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PostDetailActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -562,10 +599,10 @@ public class PostDetailActivity extends AppCompatActivity {
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (mProcessComment){
-                    String comments = ""+ dataSnapshot.child("pComments").getValue();
+                if (mProcessComment) {
+                    String comments = "" + dataSnapshot.child("pComments").getValue();
                     int newCommentVal = Integer.parseInt(comments) + 1;
-                    ref.child("pComments").setValue(""+newCommentVal);
+                    ref.child("pComments").setValue("" + newCommentVal);
                     mProcessComment = false;
                 }
             }
@@ -584,16 +621,15 @@ public class PostDetailActivity extends AppCompatActivity {
         myRef.orderByChild("uid").equalTo(myUid).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot ds: dataSnapshot.getChildren()){
-                    myName = ""+ds.child("name").getValue();
-                    myDp = ""+ds.child("image").getValue();
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    myName = "" + ds.child("name").getValue();
+                    myDp = "" + ds.child("image").getValue();
 
                     //set data
                     try {
                         //if image is received then set
                         Picasso.get().load(myDp).placeholder(R.drawable.ic_default_img).into(cAvatarIv);
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
                         Picasso.get().load(R.drawable.ic_default_img).into(cAvatarIv);
                     }
                 }
@@ -614,19 +650,21 @@ public class PostDetailActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 //keep checking the posts until get the required post
-                for (DataSnapshot ds: dataSnapshot.getChildren()){
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     //get data
-                    String pTitle = ""+ds.child("pTitle").getValue();
-                    String pDescr = ""+ds.child("pDescr").getValue();
-                    pLikes = ""+ds.child("pLikes").getValue();
-                    String pTimeStamp = ""+ds.child("pTime").getValue();
-                    pImage = ""+ds.child("pImage").getValue();
-                    hisDp = ""+ds.child("uDp").getValue();
-                    hisUid = ""+ds.child("uid").getValue();
-                    hisNode = ""+ds.child("userNode").getValue();
-                    String uEmail = ""+ds.child("uEmail").getValue();
-                    hisName = ""+ds.child("uName").getValue();
-                    String commentCount = ""+ds.child("pComments").getValue();
+                    String pTitle = "" + ds.child("pTitle").getValue();
+                    String pDescr = "" + ds.child("pDescr").getValue();
+                    pLikes = "" + ds.child("pLikes").getValue();
+                    pTimeStamp = "" + ds.child("pTime").getValue();
+                    pImage = "" + ds.child("pImage").getValue();
+                    hisDp = "" + ds.child("uDp").getValue();
+                    hisUid = "" + ds.child("uid").getValue();
+                    hisNode = "" + ds.child("userNode").getValue();
+                    String uEmail = "" + ds.child("uEmail").getValue();
+                    hisName = "" + ds.child("uName").getValue();
+                    pVideo = "" + ds.child("pVideo").getValue();
+                    pVideoName = "" + ds.child("pVideoName").getValue();
+                    String commentCount = "" + ds.child("pComments").getValue();
 
                     //convert timestamp to dd/mm/yyyy hh:mm am/pm
                     Calendar calendar = Calendar.getInstance(Locale.getDefault());
@@ -638,24 +676,37 @@ public class PostDetailActivity extends AppCompatActivity {
                     pDescriptionTv.setText(pDescr);
                     pLikesTv.setText(pLikes + "Likes");
                     pTimeTiv.setText(pTime);
-                    pCommentsTv.setText(commentCount +" Comments");
+                    pCommentsTv.setText(commentCount + " Comments");
 
                     uNameTv.setText(hisName);
 
                     //set image of the user who posted
                     //if there is no image i.e. pImage.equals("noImage") then hide ImageView
-                    if (pImage.equals("noImage")){
+
+                    if (pImage.equals("null") && pVideo != null && pVideoName != null) {
+
+                        pImageIv.setVisibility(View.GONE);
+                        playerView.setVisibility(View.VISIBLE);
+                        downloud_constraintLayout.setVisibility(View.VISIBLE);
+
+                        videoName.setText(pVideoName);
+
+                        initExoPlayer(pVideo);
+
+                    } else if (pImage.equals("noImage")) {
                         //hide imageview
-                       pImageIv.setVisibility(View.GONE);
-                    }
-                    else {
+                        pImageIv.setVisibility(View.GONE);
+                        playerView.setVisibility(View.GONE);
+                        downloud_constraintLayout.setVisibility(View.GONE);
+                    } else {
                         //show imageview
-                       pImageIv.setVisibility(View.VISIBLE);
+                        pImageIv.setVisibility(View.VISIBLE);
+                        playerView.setVisibility(View.GONE);
+                        downloud_constraintLayout.setVisibility(View.GONE);
 
                         try {
                             Picasso.get().load(pImage).into(pImageIv);
-                        }
-                        catch (Exception e){
+                        } catch (Exception e) {
 
                         }
                     }
@@ -664,7 +715,7 @@ public class PostDetailActivity extends AppCompatActivity {
                     //set user image in comment part
                     try {
                         Picasso.get().load(hisDp).placeholder(R.drawable.ic_default_img).into(uPictureIv);
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         Picasso.get().load(R.drawable.ic_default_img).into(uPictureIv);
                     }
 
@@ -679,14 +730,51 @@ public class PostDetailActivity extends AppCompatActivity {
         });
     }
 
-    private void checkUserStatus(){
+    private void initExoPlayer(String url) {
+
+        simpleExoPlayer = ExoPlayerFactory.newSimpleInstance(this);
+        playerView.setPlayer(simpleExoPlayer);
+        DataSource.Factory daFactory = new DefaultDataSourceFactory(this, Util.getUserAgent(this, "CSIS"));
+
+        MediaSource mediaSource = new ExtractorMediaSource.Factory(daFactory).createMediaSource(Uri.parse(url));
+
+        simpleExoPlayer.prepare(mediaSource);
+        simpleExoPlayer.setPlayWhenReady(false);
+    }
+
+    private void downloudFile(Context context, String file_name_with_extention, Uri uri) {
+        DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        DownloadManager.Request request = new DownloadManager.Request(uri);
+
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        request.setDestinationInExternalPublicDir("CSIS", file_name_with_extention);
+
+        downloadManager.enqueue(request);
+    }
+
+    public void pausePlayer() {
+
+        if (simpleExoPlayer != null) {
+            simpleExoPlayer.setPlayWhenReady(false);
+        }
+    }
+
+    public void releaseExoPlayer() {
+
+        if (simpleExoPlayer != null) {
+            simpleExoPlayer.stop();
+            simpleExoPlayer.release();
+            simpleExoPlayer = null;
+        }
+    }
+
+    private void checkUserStatus() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user!= null){
+        if (user != null) {
             //user is signed in
             myEmail = user.getEmail();
             myUid = user.getUid();
-        }
-        else {
+        } else {
             //user not signed in, go to main activity
             startActivity(new Intent(this, MainActivity.class));
             finish();
@@ -712,7 +800,7 @@ public class PostDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         //get item id
         int id = item.getItemId();
-        if (id == R.id.action_logout){
+        if (id == R.id.action_logout) {
             FirebaseAuth.getInstance().signOut();
             clearSharedPreference();
             checkUserStatus();
@@ -720,7 +808,7 @@ public class PostDetailActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void clearSharedPreference(){
+    public void clearSharedPreference() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(PostDetailActivity.this);
         //editing into shared preference
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -729,9 +817,18 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+
+        pausePlayer();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         // Unregister VisualizerActivity as an OnPreferenceChangedListener to avoid any memory leaks.
         PreferenceManager.getDefaultSharedPreferences(PostDetailActivity.this);
+
+        releaseExoPlayer();
     }
 }

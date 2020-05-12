@@ -7,6 +7,8 @@ import android.preference.PreferenceManager;
 import android.view.MenuItem;
 
 import com.csis.social.app.fragments.ChatListFragment;
+import com.csis.social.app.fragments.ChooseQuizFragment;
+import com.csis.social.app.fragments.ChooseSubjectFragment;
 import com.csis.social.app.fragments.HomeFragment;
 import com.csis.social.app.fragments.ProfileFragment;
 import com.csis.social.app.fragments.UsersFragment;
@@ -38,6 +40,9 @@ public class DashboardActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //init
+        firebaseAuth = FirebaseAuth.getInstance();
+
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(DashboardActivity.this);
         //reading from shared preference
         userType = sharedPreferences.getString("userType", "not found");
@@ -46,17 +51,17 @@ public class DashboardActivity extends AppCompatActivity {
             setContentView(R.layout.activity_student_dashboard);
         else if (userType.equals("Admin"))
             setContentView(R.layout.activity_admin_dashboard);
+        else
+            checkUserStatus();
 
         //Actionbar and its title
         actionBar = getSupportActionBar();
         actionBar.setTitle("Profile");
 
-        //init
-        firebaseAuth = FirebaseAuth.getInstance();
-
         //bottom navigation
         BottomNavigationView navigationView = findViewById(R.id.navigation);
-        navigationView.setOnNavigationItemSelectedListener(selectedListener);
+        if (navigationView!=null)
+            navigationView.setOnNavigationItemSelectedListener(selectedListener);
 
         //home fragment transaction (default, on star)
         actionBar.setTitle("Home");//change actionbar title
@@ -169,6 +174,7 @@ public class DashboardActivity extends AppCompatActivity {
             //user not signed in, go to main acitivity
             startActivity(new Intent(DashboardActivity.this, MainActivity.class));
             finish();
+            return;
         }
     }
 

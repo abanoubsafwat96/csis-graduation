@@ -1,5 +1,6 @@
 package com.csis.social.app.adapters;
 
+import android.app.DownloadManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -26,6 +28,15 @@ import com.csis.social.app.PostLikedByActivity;
 import com.csis.social.app.R;
 import com.csis.social.app.ThereProfileActivity;
 import com.csis.social.app.models.ModelPost;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.util.Util;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,6 +52,7 @@ import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -48,11 +60,11 @@ import java.util.Locale;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.PopupMenu;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
-
 
     Context context;
     List<ModelPost> postList;
@@ -65,6 +77,8 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
     boolean mProcessLike = false;
 
     private String userType;
+    public SimpleExoPlayer simpleExoPlayer;
+    private ArrayList<SimpleExoPlayer> exoPlayers;
 
     public AdapterPosts(Context context, List<ModelPost> postList, String userType) {
         this.context = context;
@@ -73,6 +87,7 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         likesRef = FirebaseDatabase.getInstance().getReference().child("Likes");
         postsRef = FirebaseDatabase.getInstance().getReference().child("Posts");
+        exoPlayers = new ArrayList<>();
     }
 
     @NonNull
@@ -96,7 +111,9 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         final String pTitle = postList.get(i).getpTitle();
         final String pDescription = postList.get(i).getpDescr();
         final String pImage = postList.get(i).getpImage();
-        String pTimeStamp = postList.get(i).getpTime();
+        final String pVideo = postList.get(i).getpVideo();
+        final String pVideoName = postList.get(i).getpVideoName();
+        final String pTimeStamp = postList.get(i).getpTime();
         String pLikes = postList.get(i).getpLikes(); //contains total number of likes for a post
         String pComments = postList.get(i).getpComments(); //contains total number of likes for a post
 
@@ -124,12 +141,27 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
 
         //set post image
         //if there is no image i.e. pImage.equals("noImage") then hide ImageView
-        if (pImage.equals("noImage")) {
+        if (pImage == null && pVideo != null && pVideoName != null) {
+
+            myHolder.pImageIv.setVisibility(View.GONE);
+            myHolder.playerView.setVisibility(View.VISIBLE);
+            myHolder.downloud_constraintLayout.setVisibility(View.VISIBLE);
+
+            myHolder.videoName.setText(pVideoName);
+
+            initExoPlayer(myHolder, pVideo);
+
+        } else if (pImage.equals("noImage")) {
             //hide imageview
             myHolder.pImageIv.setVisibility(View.GONE);
+            myHolder.playerView.setVisibility(View.GONE);
+            myHolder.downloud_constraintLayout.setVisibility(View.GONE);
+
         } else {
             //show imageview
             myHolder.pImageIv.setVisibility(View.VISIBLE);
+            myHolder.playerView.setVisibility(View.GONE);
+            myHolder.downloud_constraintLayout.setVisibility(View.GONE);
 
             try {
                 Picasso.get().load(pImage).into(myHolder.pImageIv);
@@ -137,6 +169,31 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
 
             }
         }
+
+        myHolder.downloud_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (pImage == null && pVideo != null && pVideoName != null) {
+
+                    FirebaseStorage storage = FirebaseStorage.getInstance();
+                    StorageReference videoRef = storage.getReference().child("Posts/post_" + pTimeStamp);
+
+                    videoRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                        @Override
+                        public void onSuccess(Uri uri) {
+
+                            Toast.makeText(context, "Downlouding started", Toast.LENGTH_SHORT).show();
+                            downloudFile(context, pVideoName, uri);
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(context, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+        });
 
         //handle button clicks,
         myHolder.moreBtn.setOnClickListener(new View.OnClickListener() {
@@ -237,8 +294,29 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
                 context.startActivity(intent);
             }
         });
+    }
 
+    private void initExoPlayer(MyHolder myHolder, String url) {
 
+        simpleExoPlayer = ExoPlayerFactory.newSimpleInstance(context);
+        myHolder.playerView.setPlayer(simpleExoPlayer);
+        DataSource.Factory daFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, "CSIS"));
+
+        MediaSource mediaSource = new ExtractorMediaSource.Factory(daFactory).createMediaSource(Uri.parse(url));
+
+        simpleExoPlayer.prepare(mediaSource);
+
+        exoPlayers.add(simpleExoPlayer);
+    }
+
+    private void downloudFile(Context context, String file_name_with_extention, Uri uri) {
+        DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        DownloadManager.Request request = new DownloadManager.Request(uri);
+
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        request.setDestinationInExternalPublicDir("CSIS", file_name_with_extention);
+
+        downloadManager.enqueue(request);
     }
 
     private void addToHisNotifications(String hisUid, String userNode, String pId, String notification) {
@@ -468,6 +546,28 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
         });
     }
 
+    public void pausePlayer() {
+
+        for (int i = 0; i < exoPlayers.size(); i++) {
+            SimpleExoPlayer exoPlayer = exoPlayers.get(i);
+            if (exoPlayer != null) {
+                exoPlayer.setPlayWhenReady(false);
+            }
+        }
+    }
+
+    public void releaseExoPlayer() {
+
+        for (int i = 0; i < exoPlayers.size(); i++) {
+            SimpleExoPlayer exoPlayer = exoPlayers.get(i);
+            if (exoPlayer != null) {
+                exoPlayer.stop();
+                exoPlayer.release();
+                exoPlayer = null;
+            }
+        }
+    }
+
     @Override
     public int getItemCount() {
         return postList.size();
@@ -478,10 +578,13 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
 
         //views from row_post.xml
         ImageView uPictureIv, pImageIv;
-        TextView uNameTv, pTimeTv, pTitleTv, pDescriptionTv, pLikesTv, pCommentsTv;
+        PlayerView playerView;
+        TextView uNameTv, pTimeTv, pTitleTv, pDescriptionTv, pLikesTv, pCommentsTv, videoName;
         ImageButton moreBtn;
         Button likeBtn, commentBtn, shareBtn;
         LinearLayout profileLayout;
+        ConstraintLayout downloud_constraintLayout;
+        ImageButton downloud_btn;
 
         public MyHolder(@NonNull View itemView) {
             super(itemView);
@@ -500,7 +603,10 @@ public class AdapterPosts extends RecyclerView.Adapter<AdapterPosts.MyHolder> {
             commentBtn = itemView.findViewById(R.id.commentBtn);
             shareBtn = itemView.findViewById(R.id.shareBtn);
             profileLayout = itemView.findViewById(R.id.profileLayout);
+            playerView = itemView.findViewById(R.id.playerView);
+            downloud_btn = itemView.findViewById(R.id.downloud_btn);
+            downloud_constraintLayout = itemView.findViewById(R.id.downloud_constraintLayout);
+            videoName = itemView.findViewById(R.id.videoName);
         }
     }
-
 }

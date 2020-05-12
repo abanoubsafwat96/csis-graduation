@@ -1,4 +1,4 @@
-package com.csis.social.app;
+package com.csis.social.app.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,14 +7,15 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.csis.social.app.R;
+
 import java.util.ArrayList;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-class ChooseSubjectInAddPostAdapter extends BaseAdapter {
+public class ChooseSubjectInAddPostAdapter extends BaseAdapter {
     Context context;
     ArrayList<String> subjects_list;
-    String clickedSubject;
 
     public ChooseSubjectInAddPostAdapter(Context context, ArrayList<String> subjects_list) {
         this.context = context;
@@ -45,13 +46,6 @@ class ChooseSubjectInAddPostAdapter extends BaseAdapter {
 
         ((TextView) view.findViewById(R.id.name)).setText(subjects_list.get(position));
 
-//        ConstraintLayout constraintLayout = (ConstraintLayout) view.findViewById(R.id.constraintLayout);
-//        constraintLayout.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                clickedSubject=getItem(position).toString();
-//            }
-//        });
         return view;
     }
 }

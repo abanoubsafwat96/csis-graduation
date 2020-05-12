@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/messageLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:id="@+id/messageLayout"
     android:padding="10dp">
 
 
@@ -27,9 +27,9 @@
             android:id="@+id/profileIv"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@drawable/ic_default_img"
             android:visibility="gone"
-            app:c_border_color="@null" />
+            app:c_border_color="@null"
+            app:srcCompat="@drawable/ic_default_img" />
 
         <TextView
             android:id="@+id/messageTv"
@@ -38,13 +38,12 @@
             android:layout_alignParentRight="true"
             android:background="@drawable/bg_sender"
             android:padding="15dp"
-            android:paddingRight="20dp"
             android:paddingEnd="30dp"
+            android:paddingRight="20dp"
             android:text="His Message"
             android:textColor="@color/colorBlack"
             android:textSize="16sp"
-            tools:ignore="RtlSymmetry"
-             />
+            tools:ignore="RtlSymmetry" />
 
         <ImageView
             android:id="@+id/messageIv"
@@ -56,17 +55,15 @@
             android:background="@drawable/bg_sender"
             android:padding="15dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_image_black" />
-
-
+            app:srcCompat="@drawable/ic_image_black" />
     </RelativeLayout>
 
     <TextView
+        android:id="@+id/isSeenTv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/isSeenTv"
         android:gravity="end"
-        android:textAlignment="textEnd"
-        android:text="delivered"/>
+        android:text="delivered"
+        android:textAlignment="textEnd" />
 
 </LinearLayout>

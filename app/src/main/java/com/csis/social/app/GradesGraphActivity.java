@@ -2,9 +2,9 @@ package com.csis.social.app;
 
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.ArrayAdapter;
 
+import com.csis.social.app.models.Quiz;
+import com.csis.social.app.models.QuizGrades;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Description;

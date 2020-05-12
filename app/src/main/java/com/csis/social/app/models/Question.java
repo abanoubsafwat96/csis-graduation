@@ -1,9 +1,9 @@
-package com.csis.social.app;
+package com.csis.social.app.models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
-class Question implements Parcelable {
+public class Question implements Parcelable {
     public String question;
     public String answer;
     public String choice1;

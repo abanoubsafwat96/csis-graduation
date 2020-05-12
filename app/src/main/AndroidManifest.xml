@@ -4,6 +4,7 @@
     <!-- Internet Permission -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
@@ -14,9 +15,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".SubjectsFollowActivity"
-            android:label="Follow/UnFollow Subjects"></activity>
-        <activity android:name=".display"></activity>
+        <activity
+            android:name=".SubjectsFollowActivity"
+            android:label="Follow/UnFollow Subjects" />
         <activity android:name=".GroupCreateActivity" />
         <activity android:name=".PostLikedByActivity" />
         <activity android:name=".SettingsActivity" />
@@ -28,13 +29,13 @@ Intent filters inform the system what intents an application component is willin
         -->
         <activity android:name=".AddPostActivity">
             <intent-filter>
-
                 <!-- For Image -->
                 <action android:name="android.intent.action.SEND" />
 
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
             </intent-filter>
             <intent-filter>
 

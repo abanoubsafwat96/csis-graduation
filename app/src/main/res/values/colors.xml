@@ -12,12 +12,9 @@
     <color name="grey_buttons">#929899</color>
     <color name="grey_login">#5A5E5E</color>
     <color name="grey_activities">#3a3a3a</color>
-    <color name="dark_grey">#424242</color>
+    <color name="grey3">#9E9E9E</color>
     <color name="hiperlink">#0000EE</color>
     <color name="disabled_button">#cccccc</color>
-    <color name="dark_grey2">#303030</color>
     <color name="grey">#D5D8DC</color>
-    <color name="nbety">#800000</color>
     <color name="nbety_fate7">#b50101</color>
-    <color name="smawy">#BBDEFB</color>
 </resources>

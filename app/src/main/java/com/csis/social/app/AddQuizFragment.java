@@ -18,6 +18,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.csis.social.app.adapters.QuestionAdapter;
+import com.csis.social.app.models.Question;
+import com.csis.social.app.models.Quiz;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -394,6 +397,8 @@ public class AddQuizFragment extends Fragment implements Communicator.AddQuizFra
                                 deadline.setText("Select a date...");
                                 title.setText("");
                                 description.setText("");
+                                timerMinutes.setText("");
+                                timerSeconds.setText("");
                                 adapter.questions_list.clear();
                                 bonusAdapter.questions_list.clear();
 

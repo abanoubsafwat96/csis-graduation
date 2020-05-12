@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.csis.social.app.adapters.SubjectsFollowAdapter;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -123,7 +124,6 @@ public class SubjectsFollowActivity extends AppCompatActivity {
         if (id == R.id.finish_btn) {
             if (isNetworkAvailable()) {
                 ArrayList<String> followedSubjects_list = subjectsFollowAdapter.followedSubjects_list;
-                if (followedSubjects_list.size() > 0) {
 
                     DatabaseReference followReference = null;
 
@@ -136,6 +136,8 @@ public class SubjectsFollowActivity extends AppCompatActivity {
                     }
                     followReference.setValue(null);
 
+                if (followedSubjects_list.size() > 0) {
+
                     for (int i = 0; i < followedSubjects_list.size(); i++) {
                         Map<String, String> map = new HashMap<>();
                         map.put("subject", followedSubjects_list.get(i));
@@ -143,13 +145,16 @@ public class SubjectsFollowActivity extends AppCompatActivity {
                         String pushID = followReference.push().getKey();
                         followReference.child(pushID).setValue(map);
 
-                        Toast.makeText(SubjectsFollowActivity.this, "Changes saved successfully", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SubjectsFollowActivity.this, "Changes saved successfully", Toast.LENGTH_LONG).show();
                         if (startedFrom != null && startedFrom.equals("Registration"))
                             startActivity(new Intent(SubjectsFollowActivity.this, DashboardActivity.class));
                         finish();
                     }
+                } else {
+                    Toast.makeText(SubjectsFollowActivity.this, "You aren't follow any subject", Toast.LENGTH_LONG).show();
+                    finish();
                 }
-            }else
+            } else
                 Toast.makeText(this, "Check your network connectivity", Toast.LENGTH_SHORT).show();
         }
         return super.onOptionsItemSelected(item);
@@ -165,7 +170,7 @@ public class SubjectsFollowActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if (startedFrom != null && startedFrom.equals("Registration")) {
-            Toast.makeText(this, "Not Saved", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Subjects' follow not saved", Toast.LENGTH_SHORT).show();
             finish();
             moveTaskToBack(true); //Exit app
         } else

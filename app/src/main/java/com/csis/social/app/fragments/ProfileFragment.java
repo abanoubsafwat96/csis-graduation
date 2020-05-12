@@ -942,9 +942,20 @@ public class ProfileFragment extends Fragment {
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+
+        if (adapterPosts!=null)
+            adapterPosts.pausePlayer();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         // Unregister VisualizerActivity as an OnPreferenceChangedListener to avoid any memory leaks.
         PreferenceManager.getDefaultSharedPreferences(getContext());
+
+        if (adapterPosts!=null)
+            adapterPosts.releaseExoPlayer();
     }
 }

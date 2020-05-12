@@ -12,6 +12,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.csis.social.app.AddPostActivity;
@@ -21,6 +22,7 @@ import com.csis.social.app.SettingsActivity;
 import com.csis.social.app.Utilities;
 import com.csis.social.app.adapters.AdapterPosts;
 import com.csis.social.app.models.ModelPost;
+import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -50,6 +52,7 @@ public class HomeFragment extends Fragment {
     FirebaseAuth firebaseAuth;
     FirebaseDatabase firebaseDatabase;
 
+    private TextView noPosts;
     RecyclerView recyclerView;
     List<ModelPost> postList;
     AdapterPosts adapterPosts;
@@ -76,6 +79,7 @@ public class HomeFragment extends Fragment {
         firebaseDatabase = FirebaseDatabase.getInstance();
 
         //recycler view and its properties
+        noPosts = view.findViewById(R.id.noPosts);
         recyclerView = view.findViewById(R.id.postsRecyclerview);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         //show newest post first, for this load from last
@@ -121,10 +125,16 @@ public class HomeFragment extends Fragment {
                                     break;
                                 }
                             }
-                            //adapter
-                            adapterPosts = new AdapterPosts(getActivity(), postList,userType);
-                            //set adapter to recyclerview
-                            recyclerView.setAdapter(adapterPosts);
+                            if (postList.size() > 0) {
+                                noPosts.setVisibility(View.GONE);
+
+                                //adapter
+                                adapterPosts = new AdapterPosts(getActivity(), postList, userType);
+                                //set adapter to recyclerview
+                                recyclerView.setAdapter(adapterPosts);
+                            }else {
+                                noPosts.setVisibility(View.VISIBLE);
+                            }
                         }
                     }
 
@@ -290,9 +300,20 @@ public class HomeFragment extends Fragment {
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+
+        if (adapterPosts!=null)
+            adapterPosts.pausePlayer();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         // Unregister VisualizerActivity as an OnPreferenceChangedListener to avoid any memory leaks.
         PreferenceManager.getDefaultSharedPreferences(getContext());
+
+        if (adapterPosts!=null)
+            adapterPosts.releaseExoPlayer();
     }
 }

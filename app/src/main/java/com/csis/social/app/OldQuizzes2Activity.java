@@ -7,6 +7,9 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.csis.social.app.adapters.QuestionAdapter;
+import com.csis.social.app.models.Quiz;
+
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 

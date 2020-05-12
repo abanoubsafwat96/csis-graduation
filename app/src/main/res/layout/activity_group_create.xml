@@ -14,7 +14,7 @@
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:id="@+id/groupIconIv"
-        android:src="@drawable/ic_group_primary"/>
+        app:srcCompat="@drawable/ic_group_primary"/>
 
     <!--EditText: Group Title-->
     <EditText
@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/createGroupBtn"
         android:layout_alignParentEnd="true"
-        android:src="@drawable/ic_done_white"
+        app:srcCompat="@drawable/ic_done_white"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true" />
 

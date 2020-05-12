@@ -1,4 +1,4 @@
-package com.csis.social.app;
+package com.csis.social.app.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,11 +9,14 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
+import com.csis.social.app.models.Question;
+import com.csis.social.app.R;
+
 import java.util.ArrayList;
 
-class QuestionAdapter extends BaseAdapter {
+public class QuestionAdapter extends BaseAdapter {
     Context context;
-    ArrayList<Question> questions_list;
+    public ArrayList<Question> questions_list;
     String adapterType;
     boolean needCheckbox;
     boolean[] choosed_questions_arr;

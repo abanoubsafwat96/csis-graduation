@@ -1,4 +1,4 @@
-package com.csis.social.app;
+package com.csis.social.app.fragments;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +17,12 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.csis.social.app.AddPostActivity;
+import com.csis.social.app.MainActivity;
+import com.csis.social.app.R;
+import com.csis.social.app.SettingsActivity;
+import com.csis.social.app.TeacherQuizActivity;
+import com.csis.social.app.Utilities;
 import com.google.android.gms.auth.api.identity.SignInClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;

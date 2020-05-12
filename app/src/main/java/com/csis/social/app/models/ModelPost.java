@@ -15,7 +15,8 @@ public class ModelPost {
     String uName;
     String subject;
     String userNode;
-
+    String pVideo;
+    String pVideoName;
 
     public String getUserNode() {
         return userNode;
@@ -28,7 +29,7 @@ public class ModelPost {
     public ModelPost() {
     }
 
-    public ModelPost(String pId, String pTitle, String pDescr, String pLikes, String pComments, String pImage, String pTime, String uid, String uEmail, String uDp, String uName, String subject) {
+    public ModelPost(String pId, String pTitle, String pDescr, String pLikes, String pComments, String pImage, String pTime, String uid, String uEmail, String uDp, String uName, String subject, String userNode, String pVideo, String pVideoName) {
         this.pId = pId;
         this.pTitle = pTitle;
         this.pDescr = pDescr;
@@ -41,6 +42,9 @@ public class ModelPost {
         this.uDp = uDp;
         this.uName = uName;
         this.subject = subject;
+        this.userNode = userNode;
+        this.pVideo = pVideo;
+        this.pVideoName = pVideoName;
     }
 
     public String getpId() {
@@ -137,5 +141,21 @@ public class ModelPost {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getpVideo() {
+        return pVideo;
+    }
+
+    public void setpVideo(String pVideo) {
+        this.pVideo = pVideo;
+    }
+
+    public String getpVideoName() {
+        return pVideoName;
+    }
+
+    public void setpVideoName(String pVideoName) {
+        this.pVideoName = pVideoName;
     }
 }

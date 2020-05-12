@@ -3,7 +3,6 @@ package com.csis.social.app;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -12,6 +11,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.csis.social.app.models.Question;
+import com.csis.social.app.models.Quiz;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -262,8 +263,14 @@ public class StudentQuizActivity extends AppCompatActivity {
                     prize_textView.setText("Congratulations, You got up to 85%");
                 } else
                     prize_textView.setText("Congratulations, You got up to 85% so, you can solve bonus questions");
+
             } else {
-                prize_textView.setText("You didn't get up to 85% so, you can't solve bonus questions");
+                if (quiz.bonusQuestions_list == null) {
+                    next_btn.setVisibility(View.INVISIBLE);
+                    prize_textView.setText("You didn't get up to 85% ");
+                } else
+                    prize_textView.setText("You didn't get up to 85% so, you can't solve bonus questions");
+
                 next_btn.setVisibility(View.INVISIBLE);
             }
         } else {

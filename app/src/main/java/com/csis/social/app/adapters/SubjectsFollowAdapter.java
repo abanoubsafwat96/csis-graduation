@@ -1,4 +1,4 @@
-package com.csis.social.app;
+package com.csis.social.app.adapters;
 
 import android.content.Context;
 import android.graphics.drawable.BitmapDrawable;
@@ -8,16 +8,19 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.csis.social.app.R;
+
 import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
-class SubjectsFollowAdapter extends RecyclerView.Adapter<SubjectsFollowAdapter.ViewHolder> {
+public class SubjectsFollowAdapter extends RecyclerView.Adapter<SubjectsFollowAdapter.ViewHolder> {
 
     Context context;
-    ArrayList<String> allSubjects_list,followedSubjects_list;
+    ArrayList<String> allSubjects_list;
+    public ArrayList<String> followedSubjects_list;
 
     public SubjectsFollowAdapter(Context context, ArrayList<String> allSubjects_list, ArrayList<String> followedSubjects_list) {
         this.context = context;

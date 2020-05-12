@@ -14,7 +14,9 @@
         android:text="title"
         android:textColor="@color/colorPrimary"
         android:textSize="20sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/deadline"
@@ -30,7 +32,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/title" />
 
-
     <TextView
         android:id="@+id/description"
         android:layout_width="wrap_content"
@@ -41,16 +42,18 @@
         android:text="description"
         android:textColor="@color/grey_activities"
         android:textSize="16sp"
+        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title" />
 
     <TextView
         android:id="@+id/questions_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingBottom="11.8dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
+        android:paddingBottom="11.8dp"
         android:text="5 Questions and 3 Bonus Questions"
         android:textSize="15sp"
+        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/description" />
 </androidx.constraintlayout.widget.ConstraintLayout>

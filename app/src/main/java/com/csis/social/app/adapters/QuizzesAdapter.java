@@ -1,21 +1,20 @@
-package com.csis.social.app;
+package com.csis.social.app.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.TextView;
+
+import com.csis.social.app.R;
+import com.csis.social.app.models.Quiz;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class QuizzesAdapter extends BaseAdapter {
 

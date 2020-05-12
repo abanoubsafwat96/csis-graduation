@@ -1,11 +1,11 @@
-package com.csis.social.app;
+package com.csis.social.app.models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.ArrayList;
 
-class Quiz implements Parcelable {
+public class Quiz implements Parcelable {
     public String uid;
     public String title;
     public String description;
