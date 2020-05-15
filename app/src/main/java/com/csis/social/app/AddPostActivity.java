@@ -184,8 +184,14 @@ public class AddPostActivity extends AppCompatActivity {
             } else if (type.startsWith("image")) {
                 //image type data
                 handleSendImage(intent);
-            }
+            } else if (type.startsWith("video")) {
+                //image type data
+                imageIv.setVisibility(View.GONE);
+                playerView.setVisibility(View.VISIBLE);
+                data_linear.setVisibility(View.VISIBLE);
 
+                handleSendVideo(intent);
+            }
         }
 
         final String isUpdateKey = "" + intent.getStringExtra("key");
@@ -371,6 +377,20 @@ public class AddPostActivity extends AppCompatActivity {
 
             chooseSubjectInAddPostAdapter = new ChooseSubjectInAddPostAdapter(this, list);
             listView.setAdapter(chooseSubjectInAddPostAdapter);
+        }
+    }
+
+    private void handleSendVideo(Intent intent) {
+        //handle the received image(uri)
+        video_uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+
+        if (video_uri != null) {
+
+            initExoPlayer(video_uri.toString());
+
+            pVideoName = getVideoName();
+
+            imageIv.setBackground(null);
         }
     }
 
@@ -1250,28 +1270,33 @@ public class AddPostActivity extends AppCompatActivity {
 
                 initExoPlayer(video_uri.toString());
 
-                String uriString = video_uri.toString();
-                File myFile = new File(uriString);
-
-                if (uriString.startsWith("content://")) {
-                    Cursor cursor = null;
-                    try {
-                        cursor = getContentResolver().query(video_uri, null, null, null, null);
-                        if (cursor != null && cursor.moveToFirst()) {
-                            pVideoName = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
-                        }
-                    } finally {
-                        cursor.close();
-                        cursor = null;
-                    }
-                } else if (uriString.startsWith("file://")) {
-                    pVideoName = myFile.getName();
-                }
+                pVideoName = getVideoName();
 
                 imageIv.setBackground(null);
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private String getVideoName() {
+        String uriString = video_uri.toString();
+        File myFile = new File(uriString);
+
+        if (uriString.startsWith("content://")) {
+            Cursor cursor = null;
+            try {
+                cursor = getContentResolver().query(video_uri, null, null, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    return cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                }
+            } finally {
+                cursor.close();
+                cursor = null;
+            }
+        } else if (uriString.startsWith("file://")) {
+            return myFile.getName();
+        }
+        return null;
     }
 
     public void pausePlayer() {

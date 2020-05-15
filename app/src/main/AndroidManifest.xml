@@ -15,6 +15,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".GradesActivity"
+            android:label="Students Grades" />
+
         <activity
             android:name=".SubjectsFollowActivity"
             android:label="Follow/UnFollow Subjects" />
@@ -29,6 +32,7 @@ Intent filters inform the system what intents an application component is willin
         -->
         <activity android:name=".AddPostActivity">
             <intent-filter>
+
                 <!-- For Image -->
                 <action android:name="android.intent.action.SEND" />
 

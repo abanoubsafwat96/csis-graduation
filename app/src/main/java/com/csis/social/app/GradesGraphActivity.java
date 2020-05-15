@@ -2,6 +2,7 @@ package com.csis.social.app;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import com.csis.social.app.models.Quiz;
 import com.csis.social.app.models.QuizGrades;
@@ -34,9 +35,6 @@ public class GradesGraphActivity extends AppCompatActivity {
     private ArrayList<String> xValues;
     private ArrayList<BarEntry> yValues;
 
-    FirebaseDatabase firebaseDatabase;
-    DatabaseReference databaseReference;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,7 +43,11 @@ public class GradesGraphActivity extends AppCompatActivity {
         barChart = findViewById(R.id.barChart);
         Description description = new Description();
 
+
         final Quiz quiz = getIntent().getParcelableExtra("quiz");
+        xValues = getIntent().getStringArrayListExtra("usernames_list");
+        ArrayList<String> grades_list = getIntent().getStringArrayListExtra("grades_list");
+
         if (quiz != null) {
             description.setText(quiz.title);
         }
@@ -68,55 +70,12 @@ public class GradesGraphActivity extends AppCompatActivity {
         leftAxis.setAxisMinimum(0f); // this replaces setStartAtZero(true)
 
         yValues = new ArrayList<>();
-        xValues = new ArrayList<>();
 
-        //GradesByTestFragment
-        if (quiz != null) {
-            firebaseDatabase = FirebaseDatabase.getInstance();
-            databaseReference = firebaseDatabase.getReference().child("Grades").child(quiz.subject).child(quiz.uid);
-            databaseReference.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    QuizGrades quizGrades = Utilities.getStudentsGradesInQuiz(dataSnapshot);
-
-                    final Map<String, String> grades_map = quizGrades.grades_map;
-
-                    Iterator it = grades_map.entrySet().iterator();
-                    for (int i = 0; i < grades_map.size(); i++) {
-                        final int position = i;
-
-                        Map.Entry pair = (Map.Entry) it.next();
-                        String key = pair.getKey() + "";
-                        yValues.add(new BarEntry(position, Integer.parseInt(pair.getValue() + "")));
-
-                        firebaseDatabase.getReference().child("Users").child(key)
-                                .addValueEventListener(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                        String studentName=Utilities.getUserFullName(dataSnapshot);
-                                        if (studentName!=null)
-                                            xValues.add(studentName);
-                                        else
-                                            xValues.add("User without name");
-
-                                        if (position == grades_map.size()-1)
-                                            setXAxis(xValues);
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                                    }
-                                });
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
+        for (int i = 0; i < grades_list.size(); i++) {
+            yValues.add(new BarEntry(i, Integer.parseInt(grades_list.get(i))));
         }
+
+        setXAxis(xValues);
     }
 
     private void setXAxis(final ArrayList<String> xValues) {

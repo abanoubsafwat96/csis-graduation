@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -17,7 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class OldQuizzes2Activity extends AppCompatActivity {
 
-    TextView title, deadline, description,showGrades_link, noBonusQuestions;
+    TextView title, deadline, description, noBonusQuestions;
+    LinearLayout showGrades_link;
     EditText timerMinutes,timerSeconds;
     ListView listView, bonusListView;
     private SimpleDateFormat dateFormatForDay;
@@ -56,7 +58,7 @@ public class OldQuizzes2Activity extends AppCompatActivity {
         showGrades_link.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(OldQuizzes2Activity.this, GradesGraphActivity.class);
+                Intent intent = new Intent(OldQuizzes2Activity.this, GradesActivity.class);
                 intent.putExtra("quiz", quiz);
                 startActivity(intent);
             }
