@@ -851,6 +851,10 @@ public class AddPostActivity extends AppCompatActivity {
             hashMap.put("pLikes", "0");
             hashMap.put("pComments", "0");
             hashMap.put("subject", subject);
+            if (userType.equals("Student"))
+                hashMap.put("userNode", "Users");
+            else if (userType.equals("Admin"))
+                hashMap.put("userNode", "Admins");
 
             //path to store post data
             DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Posts");
